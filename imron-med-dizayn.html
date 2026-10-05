@@ -40,7 +40,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0}
 .phone{
   --p-bg:#F4F8F7;--p-surface:#fff;--p-fg:#102624;--p-muted:#62736F;--p-line:#E1E9E7;--p-accent:#0B8A7A;--p-accent-fg:#fff;--p-tint:#E3F3F0;--p-cash:#E08A00;
   --p-font:"Onest",system-ui,sans-serif;--p-display:var(--p-font);--p-num:var(--p-font);--p-r:16px;--p-r-sm:12px;
-  position:relative;width:100%;max-width:350px;height:720px;border-radius:44px;padding:11px;
+  position:relative;width:100%;max-width:350px;height:min(720px,calc(100dvh - 24px));min-height:540px;border-radius:44px;padding:11px;
   background:#1A1D1E;box-shadow:0 1px 0 #3a3f41 inset,0 24px 50px -24px rgba(0,0,0,.45);
 }
 .screen{position:relative;height:100%;border-radius:34px;overflow:hidden;background:var(--p-bg);color:var(--p-fg);font-family:var(--p-font);font-size:14px}
@@ -263,7 +263,20 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0}
   .splash *,.splash .mark::after,.qrbox .scan{animation-duration:.01s!important;animation-delay:0s!important}
   .splash .bar i{animation:fill 3s linear both!important}
 }
-@media (max-width:420px){.phone{height:690px;border-radius:38px}.screen{border-radius:28px}}
+@media (max-width:420px){.phone{border-radius:38px}.screen{border-radius:28px}}
+/* "Barcha oynalar" rejimi: telefon kontent bo'yicha cho'ziladi, ichki skroll yo'q */
+.phone.tall{height:auto;min-height:720px}
+.phone.tall .screen{height:auto;min-height:698px}
+.phone.tall .view{position:relative;inset:auto;min-height:698px}
+.phone.tall .scroll{overflow:visible;flex:none}
+.phone.tall .reg{height:auto;min-height:660px}
+.modes{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-bottom:26px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}
+.modes .lbl{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:600 13px/1 var(--font);padding:10px 13px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:13px;color:var(--muted);margin:-12px 0 22px}
 </style>
 
 <div class="page">
@@ -278,6 +291,12 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0}
       <button type="button" id="reset">Boshidan boshlash</button>
     </div>
   </header>
+  <nav class="modes" aria-label="Ko'rinish">
+    <div class="seg"><button type="button" data-mode="live" class="on">4 variant yonma-yon</button></div>
+    <span class="lbl">Barcha oynalar:</span>
+    <div class="seg" id="vseg"></div>
+  </nav>
+  <p class="hint" id="hint"></p>
   <main class="gallery" id="gallery"></main>
 </div>
 
@@ -341,15 +360,21 @@ function fakeQR(el,text,dark){
   finder(0,0);finder(n-7,0);finder(0,n-7);el.appendChild(cv);
 }
 
-function App(host,v){
+function App(host,v,opts={}){
+  const demo=!!opts.demo;
   const KEY="imronmed-"+v.id;
-  const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))||null}catch(e){return null}};
-  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({user:S.user,cart:S.cart,balance:S.balance,history:S.history}))}catch(e){}};
+  const load=()=>{if(demo)return null;try{return JSON.parse(localStorage.getItem(KEY))||null}catch(e){return null}};
+  const save=()=>{if(demo)return;try{localStorage.setItem(KEY,JSON.stringify({user:S.user,cart:S.cart,balance:S.balance,history:S.history}))}catch(e){}};
   const saved=load();
   const S={screen:"splash",tab:"catalog",cat:"Hammasi",q:"",useCash:false,
     user:saved?.user||null,cart:saved?.cart||{},balance:saved?.balance??0,history:saved?.history||[]};
 
-  host.innerHTML=`<div class="phone ${v.cls}"><div class="screen"><div class="sbar"><span>9:41</span><span class="notch"></span>${SIG}</div><div class="view"></div><div class="toast"></div></div></div>`;
+  host.innerHTML=`<div class="phone ${v.cls}${demo&&opts.screen!=="splash"?" tall":""}"><div class="screen"><div class="sbar"><span>9:41</span><span class="notch"></span>${SIG}</div><div class="view"></div><div class="toast"></div></div></div>`;
+  if(demo){
+    S.history=[];seed();S.cart=opts.cart||{};
+    if(opts.screen==="register"){S.screen="register";S._draft={first:"Otabek",last:"Raximov",phone:"90 123 45 67"}}
+    else{S.user={first:"Otabek",last:"Raximov",phone:"90 123 45 67"};S.screen="app";S.tab=opts.tab||"catalog"}
+  }
   const view=host.querySelector(".view"),screen=host.querySelector(".screen"),toastEl=host.querySelector(".toast");
   let tt,splashTimer;
   const toast=m=>{toastEl.textContent=m;toastEl.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>toastEl.classList.remove("show"),2200)};
@@ -357,13 +382,14 @@ function App(host,v){
   const cartTotal=()=>Object.entries(S.cart).reduce((a,[id,q])=>a+PRODUCTS.find(p=>p.id==id).p*q,0);
   const pid=()=>S.user?("IM-"+S.user.phone.replace(/\D/g,"").slice(-6)):"IM-000000";
 
-  function splash(){
+  function splash(keep){
     clearTimeout(splashTimer);
     const ecg=v.id==="tun"?'<svg class="ecg" viewBox="0 0 200 40" fill="none"><path d="M0 22h60l8-14 10 28 10-34 8 20h104" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':"";
     const el=document.createElement("div");el.className="splash";
     el.innerHTML=`<div class="mark">${MARK}</div>${ecg}<div class="word"><span>Imron</span><span>Med</span></div><div class="tag">APTEKA MARKETPLEYSI</div><div class="bar"><i></i></div>`;
     screen.querySelector(".splash")?.remove();screen.appendChild(el);
     S.screen=S.user?"app":"register";render();
+    if(keep===true)return;
     splashTimer=setTimeout(()=>{el.classList.add("out");setTimeout(()=>el.remove(),360)},3000);
   }
 
@@ -503,15 +529,40 @@ function App(host,v){
         S.balance+=cb;save();box.classList.remove("scanning");b.textContent="Kassada skanerlashni sinash";toast("Kassa skaner qildi: +"+fmt(cb)+" keshbek");
       },2800);return}
   });
-  return {replay:splash,reset(){try{localStorage.removeItem(KEY)}catch(e){}Object.assign(S,{user:null,cart:{},balance:0,history:[],tab:"catalog",cat:"Hammasi",q:"",useCash:false});delete S._draft;delete S._err;splash()},start:splash};
+  if(demo)return {replay(){if(opts.screen==="splash")splash(true)},reset(){},start(){if(opts.screen==="splash")return splash(true);render()}};
+  return {replay:splash,reset(){try{localStorage.removeItem(KEY)}catch(e){}Object.assign(S,{user:null,cart:{},balance:0,history:[],tab:"catalog",cat:"Hammasi",q:"",useCash:false});delete S._draft;delete S._err;splash()},start(){if(!demo)return splash();if(opts.screen==="splash")return splash(true);render()}};
 }
 
-const gallery=document.getElementById("gallery"),apps=[];
-VARIANTS.forEach((v,i)=>{
-  const w=document.createElement("section");w.className="variant";
-  w.innerHTML=`<div class="vhead"><span class="num">Variant ${i+1}</span><h2>${v.name}</h2><p>${v.desc}</p><div class="swatches">${v.sw.map(c=>`<i style="background:${c}"></i>`).join("")}</div></div><div class="host"></div>`;
-  gallery.appendChild(w);const a=App(w.querySelector(".host"),v);apps.push(a);a.start();
+const gallery=document.getElementById("gallery"),hint=document.getElementById("hint");let apps=[];
+const SCREENS=[["splash",null,"Ochilish animatsiyasi","3 soniya, ilova har ochilganda"],["register",null,"Ro'yxatdan o'tish","Faqat birinchi marta so'raladi"],["app","catalog","Dorilar katalogi","Rasm va «Sotib olish» tugmasi"],["app","cart","Savat","«Sotib olish» bosilganda shu yerga o'tadi",{3:1,6:2}],["app","qr","QR keshbek","Kassada sotuvchi skaner qiladi"],["app","wallet","Keshbek va sotuv tarixi","Balans va xaridlar ro'yxati"]];
+function showLive(){
+  gallery.innerHTML="";apps=[];
+  hint.textContent="Har bir telefon ichida pastga suring. Pastki menyu orqali bo'limlar almashadi.";
+  VARIANTS.forEach((v,i)=>{
+    const w=document.createElement("section");w.className="variant";
+    w.innerHTML=`<div class="vhead"><span class="num">Variant ${i+1}</span><h2>${v.name}</h2><p>${v.desc}</p><div class="swatches">${v.sw.map(c=>`<i style="background:${c}"></i>`).join("")}</div></div><div class="host"></div>`;
+    gallery.appendChild(w);const a=App(w.querySelector(".host"),v);apps.push(a);a.start();
+  });
+}
+function showAll(vid){
+  const v=VARIANTS.find(x=>x.id===vid);gallery.innerHTML="";apps=[];
+  hint.textContent=`«${v.name}» variantining barcha oynalari to'liq uzunlikda. Ma'lumotlar namuna.`;
+  SCREENS.forEach(([screen,tab,title,sub,cart],i)=>{
+    const w=document.createElement("section");w.className="variant";
+    w.innerHTML=`<div class="vhead"><span class="num">${v.name} · oyna ${i+1}</span><h2>${title}</h2><p>${sub}</p></div><div class="host"></div>`;
+    gallery.appendChild(w);const a=App(w.querySelector(".host"),v,{demo:true,screen,tab,cart});apps.push(a);a.start();
+  });
+}
+const vseg=document.getElementById("vseg");
+vseg.innerHTML=VARIANTS.map(v=>`<button type="button" data-v="${v.id}">${v.name}</button>`).join("");
+document.querySelector(".modes").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll(".modes button").forEach(x=>x.classList.toggle("on",x===b));
+  b.dataset.v?showAll(b.dataset.v):showLive();
+  try{location.hash=b.dataset.v||"live"}catch(err){}
 });
+const start=(location.hash||"").slice(1);
+(VARIANTS.some(v=>v.id===start)?vseg.querySelector(`[data-v="${start}"]`):document.querySelector('[data-mode="live"]')).click();
 document.getElementById("replay").onclick=()=>apps.forEach(a=>a.replay());
 document.getElementById("reset").onclick=()=>apps.forEach(a=>a.reset());
 </script>
