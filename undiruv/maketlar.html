@@ -169,12 +169,52 @@ h1{font:800 clamp(28px,4vw,44px)/1.05 "Manrope",var(--font);margin:8px 0 10px;le
 .app[data-v="b"] .rank.lead{color:#04201C}
 .mini{display:flex;align-items:center;gap:8px}.mini .bar{flex:1;margin:0;min-width:60px}
 
+/* Spreadsheet view */
+.sheetcard{padding:0;overflow:hidden;display:flex;flex-direction:column}
+.fbar{display:flex;align-items:stretch;border-bottom:1px solid var(--a-line);font-size:13px}
+.nbox{width:76px;flex:none;padding:8px 10px;border-right:1px solid var(--a-line);font:500 12px/1.4 "JetBrains Mono",monospace;color:var(--a-muted)}
+.fx{padding:8px 10px;border-right:1px solid var(--a-line);color:var(--a-muted);font-style:italic;font-weight:600}
+.fval{flex:1;min-width:0;padding:8px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fval .lock{color:var(--a-muted);font-size:12px;margin-left:8px}
+.gwrap{overflow:auto;max-height:520px;outline:none;position:relative}
+.sh{border-collapse:separate;border-spacing:0;font-size:13px;table-layout:fixed}
+.sh th,.sh td{border-right:1px solid var(--a-line);border-bottom:1px solid var(--a-line);height:32px;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--a-card)}
+.sh thead th{position:sticky;z-index:2;background:var(--a-bg);font-weight:600;color:var(--a-muted)}
+.sh thead tr.letters th{top:0;height:22px;font:500 11px/1 "JetBrains Mono",monospace;text-align:center}
+.sh thead tr.names th{top:22px;text-align:left;color:var(--a-fg);cursor:pointer;user-select:none}
+.sh thead tr.names th .ar{float:right;color:var(--a-muted);font-size:10px}
+.sh thead tr.names th.ro{color:var(--a-muted)}
+.sh .rn{position:sticky;left:0;z-index:1;width:44px;text-align:center;background:var(--a-bg);color:var(--a-muted);font:500 11px/1 "JetBrains Mono",monospace;padding:0}
+.sh thead .rn{z-index:3}
+.sh .fio{position:sticky;left:44px;z-index:1;box-shadow:2px 0 0 var(--a-line)}
+.sh thead .fio{z-index:3}
+.sh td.ro{color:var(--a-muted)}
+.sh td.ro.fio{color:var(--a-fg);font-weight:500}
+.sh td.num{text-align:right;font-variant-numeric:tabular-nums}
+.sh td.hot{background:var(--a-bad-soft);color:var(--a-bad);font-weight:600}
+.sh td.warm{background:var(--a-warn-soft);color:var(--a-warn);font-weight:600}
+.sh td.cur{outline:2px solid var(--a-acc);outline-offset:-2px;position:relative;z-index:1}
+.sh tr.rsel td.rn{background:var(--a-acc-soft);color:var(--a-acc)}
+.sh td[contenteditable="true"]{outline:2px solid var(--a-acc);outline-offset:-2px;background:var(--a-card);color:var(--a-fg);text-overflow:clip;cursor:text;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.sh td.sel{padding:0 4px}
+.sh select{width:100%;font:600 12px/1 var(--a-font);border:0;border-radius:999px;padding:4px 8px;background:var(--a-acc-soft);color:var(--a-acc);cursor:pointer;appearance:none;-webkit-appearance:none}
+.sh select.ok{background:var(--a-ok-soft);color:var(--a-ok)}.sh select.warn{background:var(--a-warn-soft);color:var(--a-warn)}.sh select.bad{background:var(--a-bad-soft);color:var(--a-bad)}.sh select.none{background:transparent;color:var(--a-muted)}
+.sh tfoot td{position:sticky;bottom:0;background:var(--a-bg);font-weight:700;z-index:1}
+.sfoot{display:flex;align-items:center;gap:4px;border-top:1px solid var(--a-line);padding:0 8px;background:var(--a-bg);flex-wrap:wrap}
+.stab{font:600 12px/1 var(--a-font);padding:10px 14px;border:0;background:none;color:var(--a-muted);cursor:pointer;border-top:2px solid transparent;margin-top:-1px}
+.stab.on{color:var(--a-acc);border-top-color:var(--a-acc);background:var(--a-card)}
+.stab small{font-weight:500;opacity:.7;margin-left:4px}
+.sinfo{margin-left:auto;font-size:12px;color:var(--a-muted);padding:8px 6px;font-variant-numeric:tabular-nums}
+.saved{font-size:12px;color:var(--a-ok);font-weight:600}
+.hintrow{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--a-muted)}
+.hintrow kbd{font:500 11px/1 "JetBrains Mono",monospace;border:1px solid var(--a-line);border-bottom-width:2px;border-radius:4px;padding:2px 5px;background:var(--a-card);color:var(--a-fg)}
+
 @media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}}
 @media (max-width:760px){
   .app,.app[data-v="b"]{grid-template-columns:1fr}
   .side,.app[data-v="b"] .side{flex-direction:row;align-items:center;overflow-x:auto;padding:10px 12px;gap:10px}
   .brand{padding:0}.brand .t{display:none}
-  .nav{flex-direction:row}.nav a .t{display:none}.nav a .cnt{display:none}
+  .nav{flex-direction:row}.nav a .t{display:none}.app[data-v="c"] .nav a svg{display:block}.nav a .cnt{display:none}
   .side .me{display:none}
   .main,.app[data-v="c"] .main{padding:16px 12px 22px}
   .kpis{gap:10px}.search{min-width:0;flex:1}
@@ -201,6 +241,7 @@ h1{font:800 clamp(28px,4vw,44px)/1.05 "Manrope",var(--font);margin:8px 0 10px;le
     <div class="seg" role="group" aria-label="Panel">
       <span class="lbl">Panel</span>
       <button class="pbtn on" data-set-p="emp">Xodim paneli</button>
+      <button class="pbtn" data-set-p="sheet">Xodim: mijozlar jadvali</button>
       <button class="pbtn" data-set-p="adm">Rahbariyat paneli</button>
     </div>
   </div>
@@ -261,12 +302,13 @@ const initials = n => n.split(' ').slice(0,2).map(w=>w[0]).join('');
 let V = 'a', P = 'emp', SEL = 0;
 
 function side(){
-  const emp = [['home','Bosh sahifa'],['case','Mening ishlarim',48],['task','Vazifalar',12],['users','Qarzdorlar'],['pay','To\'lovlar'],['chart','Hisobotlarim']];
+  const emp = [['home','Bosh sahifa'],['case','Mening ishlarim',48],['task','Vazifalar',12],['users','Mijozlar jadvali'],['pay','To\'lovlar'],['chart','Hisobotlarim']];
   const adm = [['chart','Dashboard'],['case','Portfel'],['users','Xodimlar'],['split','Taqsimlash',36],['pay','To\'lovlar'],['task','Hisobotlar'],['gear','Sozlamalar']];
-  const items = (P==='emp'?emp:adm).map((x,i)=>`<a class="${i===0?'on':''}" title="${x[1]}">${ico(x[0])}<span class="t">${x[1]}</span>${x[2]?`<span class="cnt">${x[2]}</span>`:''}</a>`).join('');
-  const me = P==='emp' ? ['Dilshod Nazarov','Undiruvchi · 1-bo\'lim'] : ['Rustam Aliyev','Bo\'lim rahbari'];
+  const isEmp = P!=='adm', on = P==='sheet' ? 3 : 0;
+  const items = (isEmp?emp:adm).map((x,i)=>`<a class="${i===on?'on':''}" title="${x[1]}">${ico(x[0])}<span class="t">${x[1]}</span>${x[2]?`<span class="cnt">${x[2]}</span>`:''}</a>`).join('');
+  const me = isEmp ? ['Dilshod Nazarov','Undiruvchi · 1-bo\'lim'] : ['Rustam Aliyev','Bo\'lim rahbari'];
   return `<aside class="side">
-    <div class="brand"><div class="logo">U</div><div class="t">Undiruv<small>${P==='emp'?'Xodim kabineti':'Boshqaruv paneli'}</small></div></div>
+    <div class="brand"><div class="logo">U</div><div class="t">Undiruv<small>${isEmp?'Xodim kabineti':'Boshqaruv paneli'}</small></div></div>
     <nav class="nav">${items}</nav>
     <div class="me"><div class="ava">${initials(me[0])}</div><div><b>${me[0]}</b><span>${me[1]}</span></div></div>
   </aside>`;
@@ -396,13 +438,137 @@ function admMain(){
   </main>`;
 }
 
+/* ---------- Spreadsheet view (Google Sheets-like) ---------- */
+const STAGE_C = {Soft:'', Hard:'warn', Sudgacha:'warn', Sud:'bad', MIB:'bad'};
+const RES_C = {'—':'none', 'Gaplashildi':'', 'Javob bermadi':'warn', 'Va\'da berdi':'ok', 'Rad etdi':'bad', 'Raqam noto\'g\'ri':'bad'};
+const COLS = [
+  {k:'fio', t:'F.I.Sh.', w:230, ro:true},
+  {k:'ph', t:'Telefon', w:150},
+  {k:'c', t:'Shartnoma', w:120, ro:true},
+  {k:'sum', t:'Qarz, so\'m', w:120, ro:true, num:true},
+  {k:'dpd', t:'DPD', w:64, ro:true, num:true},
+  {k:'st', t:'Bosqich', w:116, opts:STAGE_C},
+  {k:'last', t:'Oxirgi aloqa', w:110},
+  {k:'res', t:'Natija', w:150, opts:RES_C},
+  {k:'pAmt', t:'Va\'da summasi', w:124, num:true},
+  {k:'pDate', t:'Va\'da sanasi', w:104},
+  {k:'note', t:'Izoh', w:260}
+];
+const LET = i => String.fromCharCode(65+i);
+const ROWS = (()=>{
+  const fn = ['Karimov Jasur','Yusupova Malika','Rahimov Otabek','Tursunov Sardor','Abdullayeva Nilufar','Ergashev Bekzod','Xolmatova Dilnoza','Sobirov Ulug\'bek','Nurmatov Farrux','Qosimova Zarina','Mirzayev Shoxrux','Islomova Sevara','Hamidov Javlon','Raxmatova Gulchehra','Toshpo\'latov Anvar','Usmonova Feruza','Bakirov Sanjar','Aliyeva Kamola','Jo\'rayev Doston','Saidova Mohira','Ortiqov Elyor','Valiyeva Nodira','Komilov Behruz','Ahmedova Laylo'];
+  const notes = ['','Ish joyida gaplashib bo\'lmaydi, kechqurun','Turmush o\'rtog\'i bilan gaplashildi','Oylik 25-sanada','Chet elda, qarindoshi to\'laydi','','Qisman to\'lash taklif qilindi','Manzil o\'zgargan',''];
+  const st = ['Soft','Soft','Hard','Sudgacha','Soft','Sud','Hard','MIB'];
+  const rs = Object.keys(RES_C);
+  let s = 7; const rnd = n => (s = (s*9301+49297)%233280, Math.floor(s/233280*n));
+  return fn.map((f,i)=>{
+    const dpd = 8 + rnd(210), r = rs[rnd(rs.length)], prom = r==='Va\'da berdi';
+    const fem = f.split(' ')[0].endsWith('a'), pat = ['Anvar','Bahodir','Rustam','Shuhrat','Ilhom','Akmal'][rnd(6)];
+    return {fio:`${f} ${pat}${fem?'ovna':'ovich'}`,
+      ph:`+998 9${rnd(10)} ${100+rnd(900)} ${10+rnd(90)} ${10+rnd(90)}`, c:`KR-202${3+rnd(2)}/${String(100+rnd(2400)).padStart(4,'0')}`,
+      sum:(2+rnd(38))*500000+rnd(9)*50000, dpd, st: dpd>150 ? st[5+rnd(3)] : dpd>60 ? st[2+rnd(2)] : 'Soft',
+      last:`${String(1+rnd(19)).padStart(2,'0')}.10.2026`, res:r, pAmt: prom ? fmt((1+rnd(8))*500000) : '', pDate: prom ? `${21+rnd(9)}.10.2026` : '', note:notes[rnd(notes.length)]};
+  });
+})();
+const SH = {r:0, c:0, sort:null, dir:1, tab:'all', editing:false, saved:''};
+const TABS = [['all','Hammasi',()=>true],['prom','Va\'dalar',r=>r.res==='Va\'da berdi'],['nores','Javob bermaganlar',r=>r.res==='Javob bermadi'],['court','Sud / MIB',r=>r.st==='Sud'||r.st==='MIB']];
+function shRows(){
+  const f = TABS.find(t=>t[0]===SH.tab)[2];
+  let rows = ROWS.map((r,i)=>({r,i})).filter(x=>f(x.r));
+  if (SH.sort){ const k=SH.sort; rows.sort((a,b)=>{const x=a.r[k],y=b.r[k];return (typeof x==='number'?x-y:String(x).localeCompare(String(y)))*SH.dir}); }
+  return rows;
+}
+function cellHTML(row, c, ci, ri){
+  const v = row[c.k], cls = [c.ro?'ro':'', c.num?'num':'', c.k==='fio'?'fio':'', c.opts?'sel':''];
+  if (c.k==='dpd') cls.push(v>90?'hot':v>30?'warm':'');
+  const inner = c.opts ? `<select data-k="${c.k}" class="${c.opts[v]??''}" tabindex="-1">${Object.keys(c.opts).map(o=>`<option${o===v?' selected':''}>${o}</option>`).join('')}</select>`
+              : (c.k==='sum' ? fmt(v) : v);
+  return `<td class="${cls.join(' ')}" data-r="${ri}" data-c="${ci}">${inner}</td>`;
+}
+function sheetMain(){
+  const rows = shRows(), total = rows.reduce((s,x)=>s+x.r.sum,0);
+  const widths = `<colgroup><col style="width:44px">${COLS.map(c=>`<col style="width:${c.w}px">`).join('')}</colgroup>`;
+  const head = `<thead><tr class="letters"><th class="rn"></th>${COLS.map((c,i)=>`<th class="${c.k==='fio'?'fio':''}">${LET(i)}</th>`).join('')}</tr>
+    <tr class="names"><th class="rn">#</th>${COLS.map(c=>`<th class="${c.ro?'ro':''} ${c.k==='fio'?'fio':''}" data-sort="${c.k}" title="Saralash">${c.t}${c.ro?' 🔒':''}<span class="ar">${SH.sort===c.k?(SH.dir>0?'▲':'▼'):'⇅'}</span></th>`).join('')}</tr></thead>`;
+  const body = rows.map((x,ri)=>`<tr data-ri="${ri}"><td class="rn">${ri+1}</td>${COLS.map((c,ci)=>cellHTML(x.r,c,ci,ri)).join('')}</tr>`).join('');
+  const foot = `<tfoot><tr><td class="rn">Σ</td><td class="fio">Jami: ${rows.length} ta</td><td></td><td></td><td class="num">${fmt(total)}</td>${'<td></td>'.repeat(COLS.length-4)}</tr></tfoot>`;
+  const tabs = TABS.map(t=>`<button class="stab ${SH.tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}<small>${ROWS.filter(t[2]).length}</small></button>`).join('');
+  return `<main class="main">
+    <div class="head">
+      <div><h2>Mijozlar jadvali</h2><p>Menga biriktirilgan ${ROWS.length} ta mijoz · <span class="saved" id="saved">✓ Barcha o'zgarishlar saqlandi</span></p></div>
+      <div class="tools"><div class="search">${ico('search').replace('<svg','<svg width="16" height="16" style="stroke:currentColor;fill:none;stroke-width:2"')} Jadvaldan qidirish</div><button class="btn">Filtr</button><button class="btn pri">Excel'ga eksport</button></div>
+    </div>
+    <section class="card sheetcard">
+      <div class="fbar"><div class="nbox" id="nbox"></div><div class="fx">fx</div><div class="fval" id="fval"></div></div>
+      <div class="gwrap" id="gwrap" tabindex="0"><table class="sh" style="width:${44+COLS.reduce((s,c)=>s+c.w,0)}px">${widths}${head}<tbody>${body}</tbody>${foot}</table></div>
+      <div class="sfoot">${tabs}<div class="sinfo" id="sinfo"></div></div>
+    </section>
+    <div class="hintrow"><span><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> harakat</span><span><kbd>Enter</kbd> yoki ikki marta bosish: tahrirlash</span><span>Yozishni boshlasangiz, katak darhol tahrirlanadi</span><span><kbd>Esc</kbd> bekor qilish</span><span>🔒 Tizim ustunlarini (qarz, DPD, shartnoma) xodim o'zgartira olmaydi</span></div>
+  </main>`;
+}
+function shCell(r=SH.r,c=SH.c){return document.querySelector(`#gwrap td[data-r="${r}"][data-c="${c}"]`)}
+function shSelect(r,c){
+  const n = shRows().length; if(!n) return;
+  SH.r = Math.max(0,Math.min(n-1,r)); SH.c = Math.max(0,Math.min(COLS.length-1,c));
+  document.querySelectorAll('#gwrap td.cur').forEach(td=>td.classList.remove('cur'));
+  document.querySelectorAll('#gwrap tr.rsel').forEach(tr=>tr.classList.remove('rsel'));
+  const td = shCell(); if(!td) return;
+  td.classList.add('cur'); td.parentElement.classList.add('rsel');
+  td.scrollIntoView({block:'nearest',inline:'nearest'});
+  const col = COLS[SH.c], row = shRows()[SH.r].r;
+  document.getElementById('nbox').textContent = LET(SH.c)+(SH.r+1);
+  document.getElementById('fval').innerHTML = `${col.k==='sum'?fmt(row.sum):row[col.k]}${col.ro?'<span class="lock">🔒 tizim maydoni</span>':''}`;
+  document.getElementById('sinfo').textContent = `${row.fio.split(' ').slice(0,2).join(' ')} · ${row.c}`;
+}
+function shFlashSaved(){const s=document.getElementById('saved'); if(!s) return; s.textContent='Saqlanmoqda…'; setTimeout(()=>{s.textContent='✓ Barcha o\'zgarishlar saqlandi'},500)}
+function shEdit(initial){
+  const col = COLS[SH.c], td = shCell(); if(!td) return;
+  if (col.ro){ const f=document.getElementById('fval'); f.querySelector('.lock')?.animate([{opacity:.2},{opacity:1}],{duration:300,iterations:2}); return; }
+  if (col.opts){ td.querySelector('select').focus(); return; }
+  SH.editing = true; const old = td.textContent;
+  td.contentEditable = 'true'; td.focus();
+  if (initial!==undefined) td.textContent = initial;
+  const rg = document.createRange(); rg.selectNodeContents(td); rg.collapse(false); const s=getSelection(); s.removeAllRanges(); s.addRange(rg);
+  td.onkeydown = e=>{
+    if (e.key==='Enter'||e.key==='Tab'){e.preventDefault(); finish(true); e.key==='Enter'?shSelect(SH.r+1,SH.c):shSelect(SH.r,SH.c+1)}
+    else if (e.key==='Escape'){e.preventDefault(); td.textContent=old; finish(false)}
+    e.stopPropagation();
+  };
+  td.onblur = ()=>finish(true);
+  function finish(save){
+    if(!SH.editing) return; SH.editing=false; td.contentEditable='false'; td.onblur=null; td.onkeydown=null;
+    if (save && td.textContent!==old){ shRows()[SH.r].r[col.k]=td.textContent.trim(); shFlashSaved(); }
+    document.getElementById('gwrap').focus({preventScroll:true}); shSelect(SH.r,SH.c);
+  }
+}
+function bindSheet(){
+  const g = document.getElementById('gwrap');
+  g.addEventListener('mousedown', e=>{const td=e.target.closest('td[data-c]'); if(td&&!SH.editing){shSelect(+td.dataset.r,+td.dataset.c); if(e.target.tagName!=='SELECT'){e.preventDefault(); g.focus({preventScroll:true})}}});
+  g.addEventListener('dblclick', e=>{if(e.target.closest('td[data-c]')) shEdit()});
+  g.addEventListener('keydown', e=>{
+    if (SH.editing || e.target.tagName==='SELECT') return;
+    const m = {ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1],Tab:[0,e.shiftKey?-1:1]}[e.key];
+    if (m){e.preventDefault(); shSelect(SH.r+m[0],SH.c+m[1]);}
+    else if (e.key==='Enter'||e.key==='F2'){e.preventDefault(); shEdit();}
+    else if (e.key.length===1 && !e.ctrlKey && !e.metaKey){e.preventDefault(); shEdit(e.key);}
+  });
+  g.addEventListener('change', e=>{const s=e.target; if(s.tagName!=='SELECT') return;
+    const td=s.closest('td'), col=COLS[+td.dataset.c]; shRows()[+td.dataset.r].r[col.k]=s.value; s.className=col.opts[s.value]??''; shFlashSaved(); g.focus({preventScroll:true}); shSelect(+td.dataset.r,+td.dataset.c);
+  });
+  document.querySelectorAll('[data-sort]').forEach(th=>th.onclick=()=>{const k=th.dataset.sort; SH.dir = SH.sort===k ? -SH.dir : 1; SH.sort=k; render()});
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{SH.tab=b.dataset.tab; SH.r=0; render()});
+  shSelect(SH.r,SH.c);
+}
+
+const URLS = {emp:'undiruv.uz/xodim/vazifalar', sheet:'undiruv.uz/xodim/mijozlar', adm:'undiruv.uz/admin/dashboard'};
 function render(){
   const app = document.getElementById('app');
   app.dataset.v = V;
-  app.innerHTML = side() + (P==='emp' ? empMain() : admMain());
+  app.innerHTML = side() + ({emp:empMain, sheet:sheetMain, adm:admMain})[P]();
   document.getElementById('vdesc').innerHTML = VDESC[V];
-  document.getElementById('url').textContent = P==='emp' ? 'undiruv.uz/xodim/vazifalar' : 'undiruv.uz/admin/dashboard';
+  document.getElementById('url').textContent = URLS[P];
   app.querySelectorAll('tbody tr[data-i]').forEach(tr=>tr.onclick=()=>{SEL=+tr.dataset.i;render()});
+  if (P==='sheet') bindSheet();
 }
 document.querySelectorAll('[data-set-v]').forEach(b=>b.onclick=()=>{V=b.dataset.setV;document.querySelectorAll('[data-set-v]').forEach(x=>x.classList.toggle('on',x===b));render()});
 document.querySelectorAll('[data-set-p]').forEach(b=>b.onclick=()=>{P=b.dataset.setP;document.querySelectorAll('[data-set-p]').forEach(x=>x.classList.toggle('on',x===b));render()});

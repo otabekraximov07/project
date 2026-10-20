@@ -84,4 +84,13 @@ AuditLog(id, user_id, entity, entity_id, action, diff, created_at)
 - **B, Tungi**: qorong'i analitik interfeys, ixcham ikonali menyu. Uzoq ish kuni uchun.
 - **C, Ixcham**: yuqori menyu, iliq ranglar, katta kartochkalar. Zamonaviy SaaS uslubi.
 
+Qo'shimcha ekran: **Xodim, mijozlar jadvali**. Google Sheets uslubidagi jadval:
+
+- ustun harflari va qator raqamlari, `F5` kabi nom maydoni va `fx` qatori;
+- katakni tanlash, strelkalar bilan yurish, Enter yoki ikki marta bosib tahrirlash, yozganda darhol tahrirlash;
+- Bosqich va Natija ustunlari rangli ochiluvchi ro'yxat;
+- DPD bo'yicha shartli rang berish, ustun bo'yicha saralash, pastda varaq-filtrlar va jami summa;
+- tizim ustunlari (shartnoma, qarz, DPD) 🔒 bilan qulflangan, xodim ularni o'zgartira olmaydi;
+- o'zgarishlar avtomatik saqlanadi (haqiqiy tizimda serverga yoziladi, audit logga tushadi).
+
 Bitta variantni tanlang (yoki ulardan elementlarni aralashtiring). Keyin 1-bosqichga o'tamiz.
