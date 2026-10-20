@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>Undiruv Tizimi Maketlari</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Showroom page: neutral shell, the app frame is the only loud object. */
+:root{
+  --bg:#F1F2F4;--fg:#14161A;--muted:#666C76;--line:#DADDE2;--panel:#FFFFFF;--accent:#1F4FD1;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D0E10;--fg:#ECEDEF;--muted:#8D929B;--line:#25282D;--panel:#16181B;--accent:#7FA2FF;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0D0E10;--fg:#ECEDEF;--muted:#8D929B;--line:#25282D;--panel:#16181B;--accent:#7FA2FF;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);-webkit-font-smoothing:antialiased}
+.page{max-width:1360px;margin:0 auto;padding:32px 16px 64px}
+.top{display:flex;flex-wrap:wrap;gap:16px 40px;justify-content:space-between;align-items:flex-end;margin-bottom:22px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font:800 clamp(28px,4vw,44px)/1.05 "Manrope",var(--font);margin:8px 0 10px;letter-spacing:-.02em}
+.top p{margin:0;color:var(--muted);max-width:64ch;line-height:1.55;font-size:15px}
+.controls{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;padding:14px 0 18px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.lbl{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-right:6px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pbtn{font:600 13px/1 var(--font);padding:11px 15px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.pbtn:hover{border-color:var(--fg)}
+.pbtn.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.pbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.vdesc{font-size:14px;color:var(--muted);margin:0 0 16px;line-height:1.5}
+.vdesc b{color:var(--fg)}
+
+/* Browser frame */
+.frame{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);box-shadow:0 30px 60px -30px rgba(0,0,0,.25)}
+.chrome{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:var(--line);display:block}
+.url{flex:1;min-width:0;font:500 12px/1 "JetBrains Mono",monospace;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ============ APP (skinned by data-v) ============ */
+.app{
+  --a-bg:#F5F7FA;--a-fg:#111827;--a-muted:#6B7280;--a-line:#E5E7EB;--a-card:#FFFFFF;
+  --a-side:#0F2A5C;--a-side-fg:#C9D4EC;--a-side-on:#FFFFFF;--a-side-onbg:rgba(255,255,255,.12);
+  --a-acc:#1F4FD1;--a-acc-soft:#E8EEFC;--a-ok:#15803D;--a-ok-soft:#DCFCE7;--a-warn:#B45309;--a-warn-soft:#FEF3C7;--a-bad:#B91C1C;--a-bad-soft:#FEE2E2;
+  --a-radius:10px;--a-font:"Inter",system-ui,sans-serif;--a-head:"Inter",system-ui,sans-serif;
+  display:grid;grid-template-columns:232px 1fr;min-height:760px;background:var(--a-bg);color:var(--a-fg);font-family:var(--a-font);font-size:14px
+}
+.app[data-v="b"]{
+  --a-bg:#0B0F14;--a-fg:#E6EAF0;--a-muted:#8592A3;--a-line:#1E2630;--a-card:#121821;
+  --a-side:#080B10;--a-side-fg:#6E7B8C;--a-side-on:#C6F432;--a-side-onbg:rgba(198,244,50,.1);
+  --a-acc:#2DD4BF;--a-acc-soft:rgba(45,212,191,.12);--a-ok:#4ADE80;--a-ok-soft:rgba(74,222,128,.12);--a-warn:#FBBF24;--a-warn-soft:rgba(251,191,36,.12);--a-bad:#F87171;--a-bad-soft:rgba(248,113,113,.12);
+  --a-radius:8px;grid-template-columns:72px 1fr
+}
+.app[data-v="c"]{
+  --a-bg:#F7F3EE;--a-fg:#1C1917;--a-muted:#78716C;--a-line:#E7E0D7;--a-card:#FFFFFF;
+  --a-side:#FFFFFF;--a-side-fg:#57534E;--a-side-on:#1C1917;--a-side-onbg:#F3ECE3;
+  --a-acc:#E2531E;--a-acc-soft:#FDEBE3;--a-ok:#3F7D3A;--a-ok-soft:#E4F1E1;--a-warn:#A16207;--a-warn-soft:#FBF0D5;--a-bad:#B42318;--a-bad-soft:#FBE3E0;
+  --a-radius:18px;--a-head:"Manrope",system-ui,sans-serif;grid-template-columns:1fr;grid-template-rows:auto 1fr
+}
+
+.side{background:var(--a-side);color:var(--a-side-fg);padding:18px 12px;display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;color:var(--a-side-on);font:700 15px/1.2 var(--a-head)}
+.logo{width:30px;height:30px;border-radius:8px;background:var(--a-acc);display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px;flex:none}
+.brand small{display:block;font:500 11px/1.3 var(--a-font);color:var(--a-side-fg)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:8px;color:inherit;text-decoration:none;font-weight:500;cursor:pointer;white-space:nowrap}
+.nav a svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav a.on{background:var(--a-side-onbg);color:var(--a-side-on)}
+.nav a .cnt{margin-left:auto;font-size:11px;font-weight:700;background:var(--a-acc);color:#fff;border-radius:999px;padding:2px 7px}
+.side .me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 8px;border-top:1px solid rgba(255,255,255,.08)}
+.ava{width:32px;height:32px;border-radius:50%;background:var(--a-acc-soft);color:var(--a-acc);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.me b{display:block;color:var(--a-side-on);font-size:13px}.me span{font-size:11px}
+
+/* B: icon-only rail */
+.app[data-v="b"] .side{align-items:center;padding:16px 10px;border-right:1px solid var(--a-line)}
+.app[data-v="b"] .brand{padding:0 0 18px}.app[data-v="b"] .brand .t,.app[data-v="b"] .nav a .t,.app[data-v="b"] .nav a .cnt,.app[data-v="b"] .me div{display:none}
+.app[data-v="b"] .logo{background:var(--a-side-on);color:#0B0F14}
+.app[data-v="b"] .nav a{justify-content:center;padding:11px;position:relative}
+.app[data-v="b"] .nav a.on::before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--a-side-on)}
+.app[data-v="b"] .me{border-top-color:var(--a-line);padding:12px 0 0}
+
+/* C: horizontal top nav */
+.app[data-v="c"] .side{flex-direction:row;align-items:center;gap:18px;padding:12px 22px;border-bottom:1px solid var(--a-line);flex-wrap:wrap}
+.app[data-v="c"] .brand{padding:0;color:var(--a-fg)}.app[data-v="c"] .brand small{color:var(--a-muted)}
+.app[data-v="c"] .logo{border-radius:50%}
+.app[data-v="c"] .nav{flex-direction:row;flex-wrap:wrap;gap:4px}
+.app[data-v="c"] .nav a{border-radius:999px;padding:8px 14px}.app[data-v="c"] .nav a svg{display:none}
+.app[data-v="c"] .me{margin:0 0 0 auto;border:0;padding:0}.app[data-v="c"] .me b{color:var(--a-fg)}
+
+.main{padding:22px 26px 30px;min-width:0;display:flex;flex-direction:column;gap:18px}
+.app[data-v="c"] .main{padding:26px 28px 34px;gap:22px}
+.head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center}
+.head h2{margin:0;font:700 22px/1.2 var(--a-head);letter-spacing:-.01em}
+.app[data-v="c"] .head h2{font-size:28px;font-weight:800}
+.head p{margin:4px 0 0;color:var(--a-muted);font-size:13px}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:8px;background:var(--a-card);border:1px solid var(--a-line);border-radius:8px;padding:8px 12px;color:var(--a-muted);font-size:13px;min-width:220px}
+.app[data-v="c"] .search{border-radius:999px}
+.btn{font:600 13px/1 var(--a-font);border-radius:8px;padding:10px 14px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-fg);cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--a-acc);border-color:var(--a-acc);color:#fff}
+.app[data-v="b"] .btn.pri{color:#04201C}
+.app[data-v="c"] .btn{border-radius:999px}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card{background:var(--a-card);border:1px solid var(--a-line);border-radius:var(--a-radius);padding:16px 18px;min-width:0}
+.app[data-v="c"] .card{border:0;box-shadow:0 1px 2px rgba(28,25,23,.06)}
+.kpi .k{font-size:12px;color:var(--a-muted);font-weight:500}
+.kpi .v{font:700 24px/1.15 var(--a-head);margin:8px 0 6px;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.app[data-v="b"] .kpi .v{font-family:"JetBrains Mono",monospace;font-size:22px}
+.app[data-v="c"] .kpi .v{font-size:28px;font-weight:800}
+.kpi .v small{font-size:13px;font-weight:600;color:var(--a-muted)}
+.delta{font-size:12px;font-weight:600}.up{color:var(--a-ok)}.dn{color:var(--a-bad)}
+.bar{height:6px;background:var(--a-line);border-radius:99px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:var(--a-acc);border-radius:99px}
+.app[data-v="c"] .kpi:first-child{background:var(--a-fg);color:#fff}.app[data-v="c"] .kpi:first-child .k,.app[data-v="c"] .kpi:first-child .v small{color:#D6D3D1}
+
+.grid2{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:14px;align-items:start}
+.ctitle{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.ctitle h3{margin:0;font:700 15px/1.2 var(--a-head)}
+.app[data-v="c"] .ctitle h3{font-size:17px}
+.ctitle span{font-size:12px;color:var(--a-muted)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs b{font-size:12px;font-weight:600;padding:6px 10px;border-radius:6px;color:var(--a-muted);cursor:pointer}
+.tabs b.on{background:var(--a-acc-soft);color:var(--a-acc)}
+.app[data-v="c"] .tabs b{border-radius:999px}
+
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tw{overflow-x:auto}
+.tbl th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--a-muted);padding:8px 10px;border-bottom:1px solid var(--a-line);white-space:nowrap}
+.tbl td{vertical-align:middle;padding:10px;border-bottom:1px solid var(--a-line);white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr{cursor:pointer}.tbl tbody tr:hover td{background:var(--a-acc-soft)}
+.tbl tr.sel td{background:var(--a-acc-soft)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.app[data-v="b"] .num{font-family:"JetBrains Mono",monospace;font-size:12px}
+.who b{display:block;font-weight:600}.who span{font-size:12px;color:var(--a-muted)}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--a-acc-soft);color:var(--a-acc)}
+.pill.ok{background:var(--a-ok-soft);color:var(--a-ok)}.pill.warn{background:var(--a-warn-soft);color:var(--a-warn)}.pill.bad{background:var(--a-bad-soft);color:var(--a-bad)}
+.act{display:inline-flex;align-items:center;gap:6px;font-weight:500}
+.act svg{width:15px;height:15px;stroke:var(--a-muted);fill:none;stroke-width:1.8}
+
+/* Debtor card */
+.dhead{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.dhead .ava{width:44px;height:44px;font-size:15px}
+.dhead b{font-size:16px;display:block}.dhead span{font-size:12px;color:var(--a-muted)}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:13px;margin:0 0 14px}
+.dl dt{color:var(--a-muted)}.dl dd{margin:0;text-align:right;font-weight:500;font-variant-numeric:tabular-nums}
+.dl dd.tot{font-weight:700;font-size:15px;color:var(--a-bad)}
+.sep{height:1px;background:var(--a-line);margin:12px 0}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btns .btn{text-align:center}
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.tl li{display:grid;grid-template-columns:10px 1fr;gap:10px;font-size:13px}
+.tl li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--a-acc);margin-top:5px}
+.tl li.w::before{background:var(--a-warn)}.tl li.b::before{background:var(--a-bad)}.tl li.g::before{background:var(--a-ok)}
+.tl small{display:block;color:var(--a-muted);font-size:11px;margin-top:2px}
+
+/* Chart */
+.chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--a-muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.stack{display:flex;height:14px;border-radius:99px;overflow:hidden;gap:2px;margin:6px 0 14px}
+.stack i{display:block;height:100%}
+.slist{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;font-size:13px}
+.slist div{display:flex;align-items:center;gap:8px}.slist i{width:10px;height:10px;border-radius:3px;flex:none}
+.slist b{margin-left:auto;font-variant-numeric:tabular-nums}
+.rank{width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;line-height:1;font-size:11px;font-weight:700;background:var(--a-line);color:var(--a-muted)}
+.rank.lead{background:var(--a-acc);color:#fff}
+.app[data-v="b"] .rank.lead{color:#04201C}
+.mini{display:flex;align-items:center;gap:8px}.mini .bar{flex:1;margin:0;min-width:60px}
+
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}}
+@media (max-width:760px){
+  .app,.app[data-v="b"]{grid-template-columns:1fr}
+  .side,.app[data-v="b"] .side{flex-direction:row;align-items:center;overflow-x:auto;padding:10px 12px;gap:10px}
+  .brand{padding:0}.brand .t{display:none}
+  .nav{flex-direction:row}.nav a .t{display:none}.nav a .cnt{display:none}
+  .side .me{display:none}
+  .main,.app[data-v="c"] .main{padding:16px 12px 22px}
+  .kpis{gap:10px}.search{min-width:0;flex:1}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Bosqich 0 · Maketlar</div>
+      <h1>Undiruv tizimi</h1>
+      <p>Xodim paneli va rahbariyat uchun admin panel. Uch xil dizayn yo'nalishi bor: variant va panelni tanlab ko'ring. Jadval qatorini bossangiz, o'ngdagi qarzdor kartasi o'zgaradi.</p>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Variant">
+      <span class="lbl">Variant</span>
+      <button class="pbtn on" data-set-v="a">A · Klassik</button>
+      <button class="pbtn" data-set-v="b">B · Tungi</button>
+      <button class="pbtn" data-set-v="c">C · Ixcham</button>
+    </div>
+    <div class="seg" role="group" aria-label="Panel">
+      <span class="lbl">Panel</span>
+      <button class="pbtn on" data-set-p="emp">Xodim paneli</button>
+      <button class="pbtn" data-set-p="adm">Rahbariyat paneli</button>
+    </div>
+  </div>
+  <p class="vdesc" id="vdesc"></p>
+
+  <div class="frame">
+    <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="url" id="url"></div></div>
+    <div class="app" id="app" data-v="a"></div>
+  </div>
+</div>
+
+<script>
+const I = {
+  home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  case:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>',
+  task:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
+  users:'<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
+  pay:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  split:'<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
+  pin:'<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+  sms:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>'
+};
+const ico = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
+const fmt = n => n.toLocaleString('ru-RU').replace(/,/g,' ');
+
+const VDESC = {
+  a:'<b>A · Klassik.</b> Oq fon, to\'q ko\'k yon menyu, qat\'iy jadvallar. Bank va davlat tashkilotlari uchun tanish uslub.',
+  b:'<b>B · Tungi.</b> Qorong\'i analitik interfeys, faqat ikonali ixcham menyu, raqamlar monoshriftda. Ekran oldida uzoq ishlaydigan operatorlar uchun.',
+  c:'<b>C · Ixcham.</b> Yuqori gorizontal menyu, iliq ranglar, katta yumaloq kartochkalar. Zamonaviy SaaS ko\'rinishi.'
+};
+
+const DEBTORS = [
+  {fio:'Karimov Jasur Bahodirovich', c:'KR-2024/1187', sum:18450000, pr:14200000, ir:2950000, pe:1300000, dpd:94, st:'Sudgacha', act:'phone', at:'10:00', s:'Va\'da bugun', sc:'warn', ph:'+998 90 123 45 67', addr:'Toshkent sh., Chilonzor t., 9-kv, 14-uy'},
+  {fio:'Yusupova Malika Anvarovna', c:'KR-2023/0942', sum:7820000, pr:6500000, ir:980000, pe:340000, dpd:41, st:'Soft', act:'sms', at:'10:30', s:'Yangi', sc:'', ph:'+998 93 555 12 09', addr:'Toshkent sh., Yunusobod t., 4-kv, 22-uy'},
+  {fio:'Rahimov Otabek Ilhomovich', c:'KR-2024/0311', sum:32100000, pr:25000000, ir:4900000, pe:2200000, dpd:187, st:'Sud', act:'mail', at:'11:15', s:'Da\'vo tayyorlash', sc:'bad', ph:'+998 97 400 88 31', addr:'Toshkent vil., Chirchiq sh., Navoiy ko\'ch., 5'},
+  {fio:'Tursunov Sardor Akmalovich', c:'KR-2024/2055', sum:4650000, pr:4000000, ir:470000, pe:180000, dpd:23, st:'Soft', act:'phone', at:'12:00', s:'Qayta qilish', sc:'', ph:'+998 99 870 03 44', addr:'Toshkent sh., Sergeli t., 7-kv, 3-uy'},
+  {fio:'Abdullayeva Nilufar Shuhratovna', c:'KR-2023/1520', sum:12900000, pr:10000000, ir:2100000, pe:800000, dpd:68, st:'Hard', act:'pin', at:'14:00', s:'Rejada', sc:'warn', ph:'+998 91 222 67 10', addr:'Toshkent sh., Mirzo Ulug\'bek t., Buyuk Ipak yo\'li, 41'},
+  {fio:'Ergashev Bekzod Rustamovich', c:'KR-2024/0788', sum:9300000, pr:8000000, ir:960000, pe:340000, dpd:35, st:'Soft', act:'phone', at:'15:30', s:'Qisman to\'ladi', sc:'ok', ph:'+998 95 310 41 77', addr:'Toshkent sh., Olmazor t., 12-uy'}
+];
+const ACT_T = {phone:'Qo\'ng\'iroq', sms:'SMS', mail:'Xat', pin:'Tashrif'};
+const stPill = s => ({Soft:'', Hard:'warn', Sudgacha:'warn', Sud:'bad', MIB:'bad'})[s] ?? '';
+
+const STAFF = [
+  {n:'Dilshod Nazarov', d:'1-bo\'lim', cases:48, col:214, plan:180},
+  {n:'Gulnoza Saidova', d:'1-bo\'lim', cases:52, col:198, plan:190},
+  {n:'Aziz Qodirov', d:'2-bo\'lim', cases:45, col:167, plan:180},
+  {n:'Madina Olimova', d:'2-bo\'lim', cases:50, col:152, plan:185},
+  {n:'Sherzod Ismoilov', d:'3-bo\'lim', cases:39, col:118, plan:160},
+  {n:'Kamola Rasulova', d:'3-bo\'lim', cases:41, col:97, plan:160}
+];
+const initials = n => n.split(' ').slice(0,2).map(w=>w[0]).join('');
+
+let V = 'a', P = 'emp', SEL = 0;
+
+function side(){
+  const emp = [['home','Bosh sahifa'],['case','Mening ishlarim',48],['task','Vazifalar',12],['users','Qarzdorlar'],['pay','To\'lovlar'],['chart','Hisobotlarim']];
+  const adm = [['chart','Dashboard'],['case','Portfel'],['users','Xodimlar'],['split','Taqsimlash',36],['pay','To\'lovlar'],['task','Hisobotlar'],['gear','Sozlamalar']];
+  const items = (P==='emp'?emp:adm).map((x,i)=>`<a class="${i===0?'on':''}" title="${x[1]}">${ico(x[0])}<span class="t">${x[1]}</span>${x[2]?`<span class="cnt">${x[2]}</span>`:''}</a>`).join('');
+  const me = P==='emp' ? ['Dilshod Nazarov','Undiruvchi · 1-bo\'lim'] : ['Rustam Aliyev','Bo\'lim rahbari'];
+  return `<aside class="side">
+    <div class="brand"><div class="logo">U</div><div class="t">Undiruv<small>${P==='emp'?'Xodim kabineti':'Boshqaruv paneli'}</small></div></div>
+    <nav class="nav">${items}</nav>
+    <div class="me"><div class="ava">${initials(me[0])}</div><div><b>${me[0]}</b><span>${me[1]}</span></div></div>
+  </aside>`;
+}
+
+function kpi(k,v,extra){return `<div class="card kpi"><div class="k">${k}</div><div class="v">${v}</div>${extra||''}</div>`}
+
+function empMain(){
+  const rows = DEBTORS.map((d,i)=>`<tr class="${i===SEL?'sel':''}" data-i="${i}">
+    <td>${d.at}</td>
+    <td class="who"><b>${d.fio.split(' ').slice(0,2).join(' ')}</b><span>${d.c}</span></td>
+    <td class="num">${fmt(d.sum)}</td>
+    <td class="num">${d.dpd}</td>
+    <td><span class="pill ${stPill(d.st)}">${d.st}</span></td>
+    <td><span class="act">${ico(d.act)}${ACT_T[d.act]}</span></td>
+    <td><span class="pill ${d.sc}">${d.s}</span></td>
+  </tr>`).join('');
+  const d = DEBTORS[SEL];
+  return `<main class="main">
+    <div class="head">
+      <div><h2>Xayrli kun, Dilshod</h2><p>Seshanba, 20-oktabr · Bugun 12 ta vazifa, 3 ta va'da muddati keldi</p></div>
+      <div class="tools"><div class="search">${ico('search').replace('<svg','<svg width="16" height="16" style="stroke:currentColor;fill:none;stroke-width:2"')} Qarzdor, JShShIR yoki shartnoma</div><button class="btn pri">+ Harakat qo'shish</button></div>
+    </div>
+    <div class="kpis">
+      ${kpi('Biriktirilgan ishlar','48',`<span class="delta up">+4 bu hafta</span>`)}
+      ${kpi('Bugungi vazifalar','12 <small>/ 5 bajarildi</small>',`<div class="bar"><i style="width:42%"></i></div>`)}
+      ${kpi('Faol to\'lov va\'dalari','7 <small>· 21,4 mln</small>',`<span class="delta dn">2 tasi muddati o'tgan</span>`)}
+      ${kpi('Oylik reja','64%',`<div class="bar"><i style="width:64%"></i></div>`)}
+    </div>
+    <div class="grid2">
+      <section class="card">
+        <div class="ctitle"><h3>Bugungi ish ro'yxati</h3><div class="tabs"><b class="on">Hammasi 12</b><b>Qo'ng'iroq 7</b><b>Tashrif 2</b><b>Va'dalar 3</b></div></div>
+        <div class="tw"><table class="tbl">
+          <thead><tr><th>Vaqt</th><th>Qarzdor</th><th class="num">Qarz, so'm</th><th class="num">DPD</th><th>Bosqich</th><th>Harakat</th><th>Holat</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+      </section>
+      <section class="card">
+        <div class="dhead"><div class="ava">${initials(d.fio)}</div><div><b>${d.fio}</b><span>${d.c} · DPD ${d.dpd} kun</span></div></div>
+        <dl class="dl">
+          <dt>Telefon</dt><dd>${d.ph}</dd>
+          <dt>Manzil</dt><dd style="white-space:normal">${d.addr}</dd>
+        </dl>
+        <div class="sep"></div>
+        <dl class="dl">
+          <dt>Asosiy qarz</dt><dd>${fmt(d.pr)}</dd>
+          <dt>Foiz</dt><dd>${fmt(d.ir)}</dd>
+          <dt>Penya</dt><dd>${fmt(d.pe)}</dd>
+          <dt>Jami qarz</dt><dd class="tot">${fmt(d.sum)} so'm</dd>
+        </dl>
+        <div class="btns"><button class="btn pri">${'Qo\'ng\'iroq natijasi'}</button><button class="btn">To'lov va'dasi</button><button class="btn">SMS yuborish</button><button class="btn">Izoh</button></div>
+        <div class="sep"></div>
+        <div class="ctitle"><h3>Harakatlar tarixi</h3></div>
+        <ul class="tl">
+          <li class="w"><div>To'lov va'dasi: 5 000 000 so'm, 20.10 gacha<small>17.10 · Dilshod Nazarov</small></div></li>
+          <li><div>Qo'ng'iroq: qarzdor bilan gaplashildi<small>17.10 · 11:42 · 3 daq 18 son</small></div></li>
+          <li class="b"><div>Qo'ng'iroq: javob bermadi<small>14.10 · 16:05</small></div></li>
+          <li class="g"><div>To'lov qabul qilindi: 1 200 000 so'm<small>02.10 · Click</small></div></li>
+        </ul>
+      </section>
+    </div>
+  </main>`;
+}
+
+function chartSVG(){
+  const m = ['Noy','Dek','Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt'];
+  const plan = [1.4,1.5,1.3,1.4,1.6,1.6,1.7,1.7,1.8,1.8,1.9,2.0];
+  const fact = [1.22,1.61,1.05,1.31,1.48,1.72,1.58,1.81,1.66,1.93,1.84,1.86];
+  const W=720,H=240,pl=34,pb=24,pt=10,max=2.2,bw=(W-pl)/12;
+  const y=v=>pt+(H-pt-pb)*(1-v/max);
+  let g='';
+  [0,0.5,1,1.5,2].forEach(t=>{g+=`<line x1="${pl}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="var(--a-line)"/><text x="${pl-8}" y="${y(t)+4}" text-anchor="end" font-size="10" fill="var(--a-muted)">${t}</text>`});
+  m.forEach((mm,i)=>{
+    const x=pl+i*bw+bw*.2,w=bw*.6;
+    g+=`<rect x="${x}" y="${y(fact[i])}" width="${w}" height="${y(0)-y(fact[i])}" rx="3" fill="var(--a-acc)" opacity="${i===11?1:.8}"><title>${mm}: ${fact[i]} mlrd (reja ${plan[i]})</title></rect>`;
+    g+=`<line x1="${x-3}" x2="${x+w+3}" y1="${y(plan[i])}" y2="${y(plan[i])}" stroke="var(--a-fg)" stroke-width="2" stroke-linecap="round"/>`;
+    g+=`<text x="${x+w/2}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--a-muted)">${mm}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Oylik undiruv: reja va fakt">${g}</svg>`;
+}
+
+function admMain(){
+  const stages = [['Soft',38,'var(--a-acc)'],['Hard',24,'var(--a-warn)'],['Sudgacha',14,'#8B5CF6'],['Sud',12,'var(--a-bad)'],['MIB',8,'#64748B'],['Yopilgan',4,'var(--a-ok)']];
+  const staff = STAFF.map((s,i)=>{const p=Math.round(s.col/s.plan*100);return `<tr>
+    <td><span class="rank ${i<3?'lead':''}">${i+1}</span></td>
+    <td class="who"><b>${s.n}</b><span>${s.d}</span></td>
+    <td class="num">${s.cases}</td>
+    <td class="num">${s.col} mln</td>
+    <td><div class="mini"><div class="bar"><i style="width:${Math.min(p,100)}%;${p<80?'background:var(--a-bad)':p<100?'background:var(--a-warn)':''}"></i></div><span class="num" style="width:40px">${p}%</span></div></td>
+  </tr>`}).join('');
+  return `<main class="main">
+    <div class="head">
+      <div><h2>Boshqaruv paneli</h2><p>Oktabr 2026 · Barcha bo'limlar · Ma'lumot 09:40 da yangilandi</p></div>
+      <div class="tools"><button class="btn">Oktabr 2026 ▾</button><button class="btn">Bo'lim: Hammasi ▾</button><button class="btn pri">Excel'ga eksport</button></div>
+    </div>
+    <div class="kpis">
+      ${kpi('Umumiy portfel','12,4 <small>mlrd so\'m</small>',`<span class="delta dn">+3,1% o'tgan oyga nisbatan</span>`)}
+      ${kpi('Bu oy undirildi','1,86 <small>mlrd so\'m</small>',`<div class="bar"><i style="width:93%"></i></div><span class="delta" style="color:var(--a-muted)">Reja 2,0 mlrd · 93%</span>`)}
+      ${kpi('Undiruv darajasi','15,0%',`<span class="delta up">+1,4 p.p.</span>`)}
+      ${kpi('Muddati o\'tgan qarzdorlar','3 214',`<span class="delta dn">186 ta va'da buzilgan</span>`)}
+    </div>
+    <div class="grid2">
+      <section class="card chart">
+        <div class="ctitle"><h3>Oylik undiruv, mlrd so'm</h3><div class="legend"><span><i style="background:var(--a-acc)"></i>Fakt</span><span><i style="background:var(--a-fg);height:3px;vertical-align:3px"></i>Reja</span></div></div>
+        ${chartSVG()}
+      </section>
+      <section class="card">
+        <div class="ctitle"><h3>Bosqichlar bo'yicha portfel</h3><span>3 214 ish</span></div>
+        <div class="stack">${stages.map(s=>`<i style="width:${s[1]}%;background:${s[2]}" title="${s[0]} ${s[1]}%"></i>`).join('')}</div>
+        <div class="slist">${stages.map(s=>`<div><i style="background:${s[2]}"></i>${s[0]}<b>${s[1]}%</b></div>`).join('')}</div>
+        <div class="sep"></div>
+        <div class="ctitle"><h3>Diqqat talab qiladi</h3></div>
+        <ul class="tl">
+          <li class="b"><div>36 ta ish xodimga biriktirilmagan<small>Taqsimlash bo'limiga o'ting</small></div></li>
+          <li class="w"><div>3-bo'lim oylik rejadan 32% orqada<small>Sherzod Ismoilov, Kamola Rasulova</small></div></li>
+          <li><div>Yangi portfel importi: 412 ta shartnoma<small>Bugun 08:15 · tekshiruv kutilmoqda</small></div></li>
+        </ul>
+      </section>
+    </div>
+    <section class="card">
+      <div class="ctitle"><h3>Xodimlar reytingi</h3><div class="tabs"><b class="on">Bu oy</b><b>Chorak</b><b>Yil</b></div></div>
+      <div class="tw"><table class="tbl">
+        <thead><tr><th>#</th><th>Xodim</th><th class="num">Ishlar</th><th class="num">Undirildi</th><th>Reja bajarilishi</th></tr></thead>
+        <tbody>${staff}</tbody>
+      </table></div>
+    </section>
+  </main>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  app.dataset.v = V;
+  app.innerHTML = side() + (P==='emp' ? empMain() : admMain());
+  document.getElementById('vdesc').innerHTML = VDESC[V];
+  document.getElementById('url').textContent = P==='emp' ? 'undiruv.uz/xodim/vazifalar' : 'undiruv.uz/admin/dashboard';
+  app.querySelectorAll('tbody tr[data-i]').forEach(tr=>tr.onclick=()=>{SEL=+tr.dataset.i;render()});
+}
+document.querySelectorAll('[data-set-v]').forEach(b=>b.onclick=()=>{V=b.dataset.setV;document.querySelectorAll('[data-set-v]').forEach(x=>x.classList.toggle('on',x===b));render()});
+document.querySelectorAll('[data-set-p]').forEach(b=>b.onclick=()=>{P=b.dataset.setP;document.querySelectorAll('[data-set-p]').forEach(x=>x.classList.toggle('on',x===b));render()});
+render();
+</script>
+</body>
+</html>
