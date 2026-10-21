@@ -27,6 +27,7 @@ const PATHS = {
   userPlus: 'M15 21a6 6 0 0 0-12 0M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6',
   send: 'M22 2 11 13M22 2l-7 20-4-9-9-4z',
   message: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+  filter: 'M3 5h18l-7 8v6l-4 2v-8z',
   trophy: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3',
 } as const;
 

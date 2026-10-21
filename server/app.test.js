@@ -8,10 +8,9 @@ import { localParts } from './stats.js';
 // Uploads are stamped with the current time, so test in the current month.
 const PERIOD = localParts(new Date().toISOString()).period;
 
-let server, base, db;
+let server, base;
 before(async () => {
-  db = openDb(':memory:');
-  const app = createApp(db);
+  const app = createApp(openDb(':memory:'));
   server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}`;
@@ -113,12 +112,36 @@ test('update upload: R drops are payments, Q = 0 or a missing contract means 100
   assert.equal((await xodim('GET', `/api/clients?period=${PERIOD}`)).body.clients.length, 2);
 });
 
-test('team report: latest status per client, exits and untouched clients per employee', async () => {
+test('employee sets statuses and writes notes; the team report counts them by the rules', async () => {
   const zokirov = (await admin('GET', '/api/users')).body.users.find((u) => u.login === 'zokirov');
-  const now = new Date().toISOString();
-  const add = db.prepare('INSERT INTO contacts (user_id, contract, status, created_at) VALUES (?, ?, ?, ?)');
-  add.run(zokirov.id, 'HN2', 'boglanmadi', now);
-  add.run(zokirov.id, 'HN2', 'muhlat', now); // same client again: only the latest status counts
+  const put = (c, body) => xodim('PUT', `/api/clients/${c}/status`, body);
+  const note = (c, text) => xodim('POST', `/api/clients/${c}/notes`, { text });
+
+  // Couldn't reach, then reached and got a deadline: only the latest status counts.
+  assert.equal((await put('HN2', { status: 'boglanmadi' })).status, 200);
+  await note('HN2', 'Telefonga javob bermadi');
+  await put('HN2', { status: 'muhlat' });
+  await put('HN2', { status: 'muhlat', promiseDate: '2026-10-25' }); // picking the date is not a new status
+  await note('HN2', "25-sanagacha to'laydi");
+  await note('HN2', 'Yana bir izoh'); // several notes in a day are one conversation
+  // A status without a note is reported but is not a conversation.
+  await put('HN1', { status: 'tolandi' });
+
+  assert.equal((await put('HN3', { status: 'sms' })).status, 403, "another employee's client");
+  assert.equal((await put('HN2', { status: 'nimadir' })).status, 400);
+  assert.equal((await note('HN2', '   ')).status, 400);
+
+  const list = (await xodim('GET', `/api/clients?period=${PERIOD}`)).body.clients;
+  const hn2 = list.find((c) => c.contract === 'HN2');
+  assert.equal(hn2.status, 'muhlat');
+  assert.equal(hn2.promiseDate, '2026-10-25');
+  assert.equal(hn2.note.text, 'Yana bir izoh');
+  assert.equal(hn2.paidSum, 2_000_000);
+
+  const card = (await xodim('GET', '/api/clients/HN2')).body;
+  assert.equal(card.notes.length, 3);
+  assert.deepEqual(card.history.map((h) => [h.status, h.promiseDate]), [['muhlat', '2026-10-25'], ['boglanmadi', null]]);
+  assert.equal(card.cells[2], 'MATBOBOYEV A');
 
   for (const scope of ['today', 'all']) {
     const r = await admin('GET', `/api/team?scope=${scope}&period=${PERIOD}`);
@@ -127,10 +150,10 @@ test('team report: latest status per client, exits and untouched clients per emp
     assert.equal(row.talked, 1);
     assert.equal(row.statuses.muhlat, 1);
     assert.equal(row.statuses.boglanmadi, 0);
+    assert.equal(row.statuses.tolandi, 1);
     assert.equal(row.exitCount, 2, 'HN1 reached Q = 0 and HN2 left the file');
     assert.equal(row.exitQ, 1_000_000 + 2_000_000);
     assert.equal(row.exitR, 5_000_000 + 4_000_000);
-    assert.equal(row.notTalked, 0);
     assert.equal(r.body.total.talked, 1);
     assert.equal(r.body.total.series.exits.reduce((a, b) => a + b, 0), 2);
   }

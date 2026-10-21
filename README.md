@@ -3,7 +3,7 @@
 Undiruv portfelini hisoblash va nazorat qilish tizimi. U ikki paneldan iborat:
 
 - **Rahbariyat paneli** (admin): asosiy oyna, ma'lumot yuklash (Excel) va xodimlar.
-- **Xodim paneli**: asosiy oyna (faqat o'z mijozlari bo'yicha) va mijozlar ro'yxati.
+- **Xodim paneli**: asosiy oyna (faqat o'z mijozlari bo'yicha) va **Mijozlar** jadvali.
 
 Rahbariyat panelidagi **Asosiy oyna** tepasida ikki tugma bor:
 
@@ -13,6 +13,22 @@ Rahbariyat panelidagi **Asosiy oyna** tepasida ikki tugma bor:
 Sahifalar server bilan doimiy ulanib turadi: fayl yuklansa, tahrirlansa yoki o'chirilsa, ochiq oynalar o'zi yangilanadi.
 
 **Chiqish** deganda Q ustuni 0 ga tushgan, ya'ni 100% to'lab muddati o'tganlar ro'yxatidan chiqqan mijoz tushuniladi.
+
+## Xodim paneli: Mijozlar
+
+Jadval Google Sheets ko'rinishida. Ustunlar: filial, shartnoma, mijoz, status, muhlat sana, izoh, Q, R va to'langan summa.
+
+- **Status** har bir qatorda tanlanadi. "Muhlat bergan" tanlansa, muhlat sanasi ham belgilanadi.
+- **Izoh** qatorning oxiridagi ✎ tugmasi bilan yoziladi va Enter bosilganda saqlanadi. Jadvalda oxirgi izoh ko'rinadi, mijoz kartasida esa barcha izohlar sana va vaqti bilan turadi.
+- **Qidirish**: shartnoma raqami, ism yoki telefon bo'yicha. **Filtrlar**: status bo'yicha (bir nechtasini tanlash mumkin) va har bir ustun sarlavhasidagi tugma orqali (Sheets'dagidek saralash va qiymatlarni belgilash).
+- Tepada status bo'limlari bor: Hammasi, Belgilanmagan, Muhlat, Bog'lanmadi va boshqalar. Mijoz o'z statusi bo'limida ham ko'rinadi, status o'zgarsa yangi bo'limga o'tadi.
+- Mijoz ismini bossangiz, uning kartasi ochiladi: Excel'dagi barcha ma'lumotlar, izohlar va status tarixi.
+
+Hisobot qoidalari:
+
+- **Gaplashilgan**: shu kuni (yoki oyda) kamida bitta izoh yozilgan mijoz. Bir kunda 10 ta izoh yozilsa ham, 1 marta sanaladi.
+- **Status**: har bir mijoz oxirgi belgilangan statusi bo'yicha sanaladi. Masalan, avval "Bog'lanib bo'lmadi", keyin "Muhlat" belgilansa, mijoz faqat "Muhlat"da sanaladi.
+- **Status bor, izoh yo'q** bo'lsa, status hisobotga tushadi, lekin mijoz "gaplashilmagan"lar qatorida qoladi.
 
 ## Ishga tushirish
 

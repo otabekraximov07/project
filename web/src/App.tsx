@@ -3,7 +3,8 @@ import { api, type User } from './api';
 import { Auth } from './components/Auth';
 import { Dashboard } from './components/Dashboard';
 import { Home } from './components/Home';
-import { MyClients } from './components/MyClients';
+import { ClientCard } from './components/ClientCard';
+import { Clients } from './components/Clients';
 import { Shell, type NavItem } from './components/Shell';
 import { Splash } from './components/Splash';
 import { Uploads } from './components/Uploads';
@@ -17,7 +18,7 @@ const ADMIN_NAV: NavItem[] = [
 ];
 const STAFF_NAV: NavItem[] = [
   { id: 'home', label: 'Asosiy oyna', icon: 'home' },
-  { id: 'clients', label: 'Mijozlarim', icon: 'list' },
+  { id: 'clients', label: 'Mijozlar', icon: 'list' },
 ];
 
 const pageFromHash = () => location.hash.replace(/^#\/?/, '') || 'home';
@@ -49,7 +50,8 @@ export function App() {
   if (!user) return <Auth needsSetup={auth.needsSetup} onAuthed={(u) => { setAuth({ needsSetup: false, user: u }); navigate('home'); }} />;
 
   const nav = user.role === 'admin' ? ADMIN_NAV : STAFF_NAV;
-  const active = nav.some((n) => n.id === page) ? page : 'home';
+  const clientPage = page.startsWith('client/') && nav.some((n) => n.id === 'clients');
+  const active = clientPage ? 'clients' : nav.some((n) => n.id === page) ? page : 'home';
 
   return (
     <Shell
@@ -59,13 +61,15 @@ export function App() {
       onNavigate={navigate}
       onLogout={async () => { await api('/api/auth/logout', { method: 'POST' }).catch(() => {}); setAuth({ needsSetup: false, user: null }); }}
     >
-      <div className="page" key={active}>
+      <div className="page" key={clientPage ? page : active}>
         {active === 'home' && (user.role === 'admin'
           ? <Home user={user} onUpload={() => navigate('upload')} />
           : <Dashboard user={user} title="Asosiy oyna" />)}
         {active === 'upload' && <Uploads />}
         {active === 'users' && <Users me={user} />}
-        {active === 'clients' && <MyClients />}
+        {active === 'clients' && (clientPage
+          ? <ClientCard contract={decodeURIComponent(page.slice('client/'.length))} onBack={() => navigate('clients')} />
+          : <Clients onOpen={(c) => navigate(`client/${encodeURIComponent(c)}`)} />)}
       </div>
     </Shell>
   );

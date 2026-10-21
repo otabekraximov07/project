@@ -129,20 +129,35 @@ export function dashboard(db, period, keys = null) {
   };
 }
 
-/** Clients of a period in their latest known state, for the employee's list. */
+/**
+ * Clients of a period in their latest known state, in file order, with the
+ * employee's current status and latest note for each.
+ */
 export function clientList(db, period, keys) {
-  const { state } = replayPeriod(db, period);
+  const { state, payments } = replayPeriod(db, period);
+  const paid = new Map();
+  for (const p of payments) paid.set(p.contract, (paid.get(p.contract) ?? 0) + p.amount);
+  const statuses = new Map(db.prepare('SELECT contract, status, promise_date FROM client_status').all().map((r) => [r.contract, r]));
+  const notes = new Map(db.prepare('SELECT contract, text, created_at, MAX(id) FROM notes GROUP BY contract').all().map((r) => [r.contract, r]));
   const cellsStmt = db.prepare('SELECT cells FROM rows WHERE id = ?');
+
   return [...state.values()].filter(owned(keys)).map((s) => {
     const cells = JSON.parse(cellsStmt.get(s.rowId)?.cells ?? '[]');
+    const st = statuses.get(s.contract);
+    const note = notes.get(s.contract);
     return {
       contract: s.contract,
-      client: cells[COL.client] ?? '',
+      branch: String(cells[COL.branch] ?? ''),
+      client: String(cells[COL.client] ?? ''),
       phone: String(cells[COL.phone] ?? ''),
       overdueDays: cells[COL.overdueDays] ?? '',
       baseQ: s.baseQ, baseR: s.baseR, q: s.q, r: s.r,
+      paidSum: paid.get(s.contract) ?? 0,
       paid: s.q <= EPS,
       closed: s.closed,
+      status: st?.status ?? null,
+      promiseDate: st?.promise_date ?? null,
+      note: note ? { text: note.text, at: note.created_at } : null,
     };
-  }).sort((a, b) => Number(a.paid) - Number(b.paid) || b.q - a.q);
+  });
 }

@@ -43,8 +43,11 @@ export interface SheetRow {
   cells: (string | number)[];
 }
 
+export interface Note { id: number; text: string; at: string; author: string }
+
 export interface Client {
   contract: string;
+  branch: string;
   client: string;
   phone: string;
   overdueDays: string | number;
@@ -52,8 +55,29 @@ export interface Client {
   baseR: number;
   q: number;
   r: number;
+  paidSum: number;
   paid: boolean;
   closed: boolean;
+  status: Status | null;
+  promiseDate: string | null;
+  note: { text: string; at: string } | null;
+}
+
+export interface ClientCard {
+  contract: string;
+  headers: string[];
+  cells: (string | number)[];
+  q: number;
+  r: number;
+  baseQ: number;
+  baseR: number;
+  paidSum: number;
+  paid: boolean;
+  closed: boolean;
+  status: Status | null;
+  promiseDate: string | null;
+  notes: Note[];
+  history: { id: number; status: Status; promiseDate: string | null; at: string; author: string }[];
 }
 
 export class ApiError extends Error {

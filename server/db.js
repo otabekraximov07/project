@@ -41,16 +41,40 @@ CREATE TABLE IF NOT EXISTS rows (
 CREATE INDEX IF NOT EXISTS rows_upload ON rows(upload_id, row_no);
 CREATE INDEX IF NOT EXISTS rows_contract ON rows(contract);
 
--- An employee's conversation with a client and its outcome. Filled from the employee panel.
-CREATE TABLE IF NOT EXISTS contacts (
+-- Early builds kept call results in one table; status and notes are now separate.
+DROP TABLE IF EXISTS contacts;
+
+-- Current status of each client (by contract), set by employees.
+CREATE TABLE IF NOT EXISTS client_status (
+  contract     TEXT PRIMARY KEY,
+  status       TEXT NOT NULL CHECK (status IN ('muhlat', 'boglanmadi', 'uchinchi', 'telegram', 'sms', 'muammoli', 'tolandi')),
+  promise_date TEXT,
+  updated_by   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  updated_at   TEXT NOT NULL
+);
+
+-- Every status change, for the daily and monthly reports.
+CREATE TABLE IF NOT EXISTS status_log (
+  id           INTEGER PRIMARY KEY,
+  contract     TEXT NOT NULL,
+  user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  status       TEXT NOT NULL,
+  promise_date TEXT,
+  created_at   TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS status_log_time ON status_log(created_at);
+CREATE INDEX IF NOT EXISTS status_log_contract ON status_log(contract, id);
+
+-- Notes written after talking to a client. A note on a day means the client was talked to that day.
+CREATE TABLE IF NOT EXISTS notes (
   id         INTEGER PRIMARY KEY,
-  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   contract   TEXT NOT NULL,
-  status     TEXT NOT NULL CHECK (status IN ('muhlat', 'boglanmadi', 'uchinchi', 'telegram', 'sms', 'muammoli', 'tolandi')),
-  note       TEXT NOT NULL DEFAULT '',
+  user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  text       TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS contacts_time ON contacts(created_at);
+CREATE INDEX IF NOT EXISTS notes_time ON notes(created_at);
+CREATE INDEX IF NOT EXISTS notes_contract ON notes(contract, id);
 
 CREATE TABLE IF NOT EXISTS settings (
   key   TEXT PRIMARY KEY,

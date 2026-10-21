@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 
 // Column positions in the collection template (0-based: A = 0).
-export const COL = { contract: 1, client: 2, phone: 3, overdueDays: 14, q: 16, r: 17, employee: 23 };
+export const COL = { branch: 0, contract: 1, client: 2, phone: 3, overdueDays: 14, q: 16, r: 17, employee: 23 };
 export const MIN_COLUMNS = COL.employee + 1;
 
 /** Problem with the uploaded file that the user can fix. */

@@ -9,7 +9,7 @@ import path from 'node:path';
 import { getSetting, setSetting } from './db.js';
 import { COL, InputError, deriveFields, nameKey, parseWorkbook, toNumber, userKeys } from './excel.js';
 import { clientList, dashboard, localParts, replayPeriod } from './stats.js';
-import { teamReport } from './team.js';
+import { STATUSES, teamReport } from './team.js';
 
 const COOKIE = 'undiruv_session';
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -55,9 +55,9 @@ export function createApp(db, { staticDir } = {}) {
   };
 
   function startSession(res, user) {
-    const token = jwt.sign({ uid: user.id }, secret, { expiresIn: '7d' });
+    const token = jwt.sign({ uid: user.id }, secret, { expiresIn: '30d' });
     res.cookie(COOKIE, token, {
-      httpOnly: true, sameSite: 'lax', secure: process.env.COOKIE_SECURE === '1', maxAge: 7 * 24 * 3600 * 1000,
+      httpOnly: true, sameSite: 'lax', secure: process.env.COOKIE_SECURE === '1', maxAge: 30 * 24 * 3600 * 1000,
     });
   }
 
@@ -238,6 +238,83 @@ export function createApp(db, { staticDir } = {}) {
 
   app.get('/api/clients', auth, (req, res) => {
     res.json({ clients: clientList(db, pickPeriod(req), scopeKeys(req)) });
+  });
+
+  // ---------- client card: status and notes ----------
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const authorName = "TRIM(COALESCE(us.last_name, '') || ' ' || COALESCE(us.first_name, ''))";
+
+  /** The client's latest row; employees may only open their own clients. */
+  function clientRow(req, contract) {
+    const period = latestPeriod();
+    const replay = period ? replayPeriod(db, period) : null;
+    const s = replay?.state.get(contract);
+    if (!s) fail(404, 'Mijoz topilmadi.');
+    if (req.user.role !== 'admin' && !userKeys(req.user).has(s.empKey)) fail(403, 'Bu mijoz sizga biriktirilmagan.');
+    const row = db.prepare('SELECT r.cells, u.headers FROM rows r JOIN uploads u ON u.id = r.upload_id WHERE r.id = ?').get(s.rowId);
+    const paidSum = replay.payments.filter((p) => p.contract === contract).reduce((a, p) => a + p.amount, 0);
+    return { s, row, paidSum };
+  }
+
+  app.get('/api/clients/:contract', auth, (req, res) => {
+    const contract = req.params.contract;
+    const { s, row, paidSum } = clientRow(req, contract);
+    const st = db.prepare('SELECT status, promise_date FROM client_status WHERE contract = ?').get(contract);
+    res.json({
+      contract,
+      headers: JSON.parse(row.headers),
+      cells: JSON.parse(row.cells),
+      q: s.q, r: s.r, baseQ: s.baseQ, baseR: s.baseR, paidSum, paid: s.q <= 0.5, closed: s.closed,
+      status: st?.status ?? null,
+      promiseDate: st?.promise_date ?? null,
+      notes: db.prepare(`SELECT n.id, n.text, n.created_at AS at, ${authorName} AS author FROM notes n
+        LEFT JOIN users us ON us.id = n.user_id WHERE n.contract = ? ORDER BY n.id DESC`).all(contract),
+      history: db.prepare(`SELECT l.id, l.status, l.promise_date AS promiseDate, l.created_at AS at, ${authorName} AS author FROM status_log l
+        LEFT JOIN users us ON us.id = l.user_id WHERE l.contract = ? ORDER BY l.id DESC`).all(contract),
+    });
+  });
+
+  app.put('/api/clients/:contract/status', auth, (req, res) => {
+    const contract = req.params.contract;
+    clientRow(req, contract);
+    const status = req.body?.status ?? null;
+    if (status !== null && !STATUSES.includes(status)) fail(400, "Status noto'g'ri.");
+    const promiseDate = status === 'muhlat' ? req.body?.promiseDate || null : null;
+    if (promiseDate && !DATE_RE.test(promiseDate)) fail(400, "Muhlat sanasi noto'g'ri.");
+    const now = new Date().toISOString();
+
+    db.transaction(() => {
+      const cur = db.prepare('SELECT status, promise_date FROM client_status WHERE contract = ?').get(contract);
+      if (status === null) {
+        db.prepare('DELETE FROM client_status WHERE contract = ?').run(contract);
+        return;
+      }
+      if (cur && cur.status === status && (cur.promise_date ?? null) === promiseDate) return;
+      db.prepare(`INSERT INTO client_status (contract, status, promise_date, updated_by, updated_at) VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(contract) DO UPDATE SET status = excluded.status, promise_date = excluded.promise_date,
+        updated_by = excluded.updated_by, updated_at = excluded.updated_at`).run(contract, status, promiseDate, req.user.id, now);
+      // Only the deadline changed: amend the last entry instead of logging the same status twice.
+      const last = db.prepare('SELECT id, status FROM status_log WHERE contract = ? ORDER BY id DESC LIMIT 1').get(contract);
+      if (cur?.status === status && last?.status === status) {
+        db.prepare('UPDATE status_log SET promise_date = ? WHERE id = ?').run(promiseDate, last.id);
+      } else {
+        db.prepare('INSERT INTO status_log (contract, user_id, status, promise_date, created_at) VALUES (?, ?, ?, ?, ?)')
+          .run(contract, req.user.id, status, promiseDate, now);
+      }
+    })();
+    res.json({ status, promiseDate });
+  });
+
+  app.post('/api/clients/:contract/notes', auth, (req, res) => {
+    const contract = req.params.contract;
+    clientRow(req, contract);
+    const text = String(req.body?.text ?? '').trim();
+    if (!text) fail(400, 'Izoh bo\'sh bo\'lmasin.');
+    if (text.length > 2000) fail(400, 'Izoh 2000 belgidan oshmasin.');
+    const at = new Date().toISOString();
+    const { lastInsertRowid: id } = db.prepare('INSERT INTO notes (contract, user_id, text, created_at) VALUES (?, ?, ?, ?)')
+      .run(contract, req.user.id, text, at);
+    res.json({ note: { id, text, at, author: `${req.user.last_name} ${req.user.first_name}` } });
   });
 
   // ---------- uploads ----------
