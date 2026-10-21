@@ -1,0 +1,41 @@
+{
+  "name": "hamrohnasiya-undiruv",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "HamrohNasiya undiruv tizimi: portfel hisob-kitobi va nazorati",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:server": "node --watch server/index.js",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "typecheck": "tsc --noEmit -p web",
+    "test": "node --test server/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.4.1",
+    "cookie-parser": "^1.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "chart.js": "^4.5.0",
+    "react": "^19.1.0",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.0"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
+}
