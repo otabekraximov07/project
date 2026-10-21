@@ -4,14 +4,13 @@ import { Icon, type IconName } from './ui';
 
 export interface NavItem { id: string; label: string; icon: IconName }
 
-/** Page layout: content on the left, navigator on the right. */
+/** Page layout: navigator on the left, content on the right. */
 export function Shell({ user, nav, active, onNavigate, onLogout, children }: {
   user: User; nav: NavItem[]; active: string; onNavigate: (id: string) => void; onLogout: () => void; children: ReactNode;
 }) {
   const initials = (user.first_name[0] + user.last_name[0]).toUpperCase();
   return (
     <div className="shell">
-      <main className="content">{children}</main>
       <aside className="nav">
         <div className="nav-brand">
           <div className="logo">H</div>
@@ -31,6 +30,7 @@ export function Shell({ user, nav, active, onNavigate, onLogout, children }: {
           <button className="icon-btn" onClick={onLogout} title="Chiqish" aria-label="Chiqish"><Icon name="logout" /></button>
         </div>
       </aside>
+      <main className="content">{children}</main>
     </div>
   );
 }

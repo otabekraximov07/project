@@ -7,8 +7,9 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getSetting, setSetting } from './db.js';
-import { COL, InputError, deriveFields, nameKey, parseWorkbook, toNumber } from './excel.js';
+import { COL, InputError, deriveFields, nameKey, parseWorkbook, toNumber, userKeys } from './excel.js';
 import { clientList, dashboard, localParts, replayPeriod } from './stats.js';
+import { teamReport } from './team.js';
 
 const COOKIE = 'undiruv_session';
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -19,11 +20,6 @@ class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 const fail = (status, message) => { throw new HttpError(status, message); };
-
-/** Name keys an employee can appear under in column X ("Familiya Ism", either order). */
-export function userKeys(u) {
-  return new Set([nameKey(`${u.last_name} ${u.first_name}`), nameKey(`${u.first_name} ${u.last_name}`)]);
-}
 
 const publicUser = (u) => u && { id: u.id, first_name: u.first_name, last_name: u.last_name, login: u.login, role: u.role };
 
@@ -39,6 +35,16 @@ export function createApp(db, { staticDir } = {}) {
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+
+  // Live updates: open pages listen on /api/events and refetch when anything changes.
+  const listeners = new Set();
+  const broadcast = () => { for (const res of listeners) res.write('data: change\n\n'); };
+  app.use('/api', (req, res, next) => {
+    if (req.method !== 'GET' && !req.path.startsWith('/auth/')) {
+      res.on('finish', () => res.statusCode < 400 && broadcast());
+    }
+    next();
+  });
 
   const userCount = () => db.prepare('SELECT COUNT(*) n FROM users').get().n;
   const getUser = (id) => db.prepare('SELECT * FROM users WHERE id = ?').get(id);
@@ -146,6 +152,14 @@ export function createApp(db, { staticDir } = {}) {
     res.json({ ok: true });
   });
 
+  app.get('/api/events', auth, (req, res) => {
+    res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
+    res.write(': ok\n\n');
+    const ping = setInterval(() => res.write(': ping\n\n'), 25_000);
+    listeners.add(res);
+    req.on('close', () => { clearInterval(ping); listeners.delete(res); });
+  });
+
   // ---------- users ----------
   app.get('/api/users', auth, admin, (_req, res) => {
     const period = latestPeriod();
@@ -215,6 +229,11 @@ export function createApp(db, { staticDir } = {}) {
 
   app.get('/api/dashboard', auth, (req, res) => {
     res.json(dashboard(db, pickPeriod(req), scopeKeys(req)));
+  });
+
+  app.get('/api/team', auth, admin, (req, res) => {
+    const scope = req.query.scope === 'all' ? 'all' : 'today';
+    res.json(teamReport(db, { scope, period: pickPeriod(req) }));
   });
 
   app.get('/api/clients', auth, (req, res) => {

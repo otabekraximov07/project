@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, type User } from './api';
 import { Auth } from './components/Auth';
 import { Dashboard } from './components/Dashboard';
+import { Home } from './components/Home';
 import { MyClients } from './components/MyClients';
 import { Shell, type NavItem } from './components/Shell';
 import { Splash } from './components/Splash';
@@ -12,7 +13,7 @@ import { useToast } from './components/ui';
 const ADMIN_NAV: NavItem[] = [
   { id: 'home', label: 'Asosiy oyna', icon: 'home' },
   { id: 'upload', label: "Ma'lumot yuklash", icon: 'upload' },
-  { id: 'users', label: 'Xodimlar', icon: 'users' },
+  { id: 'users', label: 'Foydalanuvchilar', icon: 'users' },
 ];
 const STAFF_NAV: NavItem[] = [
   { id: 'home', label: 'Asosiy oyna', icon: 'home' },
@@ -59,7 +60,9 @@ export function App() {
       onLogout={async () => { await api('/api/auth/logout', { method: 'POST' }).catch(() => {}); setAuth({ needsSetup: false, user: null }); }}
     >
       <div className="page" key={active}>
-        {active === 'home' && <Dashboard user={user} onUpload={user.role === 'admin' ? () => navigate('upload') : undefined} />}
+        {active === 'home' && (user.role === 'admin'
+          ? <Home user={user} onUpload={() => navigate('upload')} />
+          : <Dashboard user={user} title="Asosiy oyna" />)}
         {active === 'upload' && <Uploads />}
         {active === 'users' && <Users me={user} />}
         {active === 'clients' && <MyClients />}

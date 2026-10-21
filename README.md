@@ -5,6 +5,15 @@ Undiruv portfelini hisoblash va nazorat qilish tizimi. U ikki paneldan iborat:
 - **Rahbariyat paneli** (admin): asosiy oyna, ma'lumot yuklash (Excel) va xodimlar.
 - **Xodim paneli**: asosiy oyna (faqat o'z mijozlari bo'yicha) va mijozlar ro'yxati.
 
+Rahbariyat panelidagi **Asosiy oyna** tepasida ikki tugma bor:
+
+- **Xodimlar**: xodimlarning real vaqtdagi natijalari. **Bugungi holat** yoki **Umumiy holat** (tanlangan oy) ko'rsatiladi. Kartalarda gaplashilgan mijozlar soni va statuslar bo'yicha taqsimot chiqadi. Hisobot jadvalida xodim ismini bossangiz, pastda o'sha xodimning to'lov/chiqish va statuslar diagrammasi ochiladi. O'ng tomonda eng ko'p chiqishlar reytingi turadi. Statuslar xodim panelidan keladi (keyingi bosqich).
+- **Undiruv**: portfel kartalari va to'lov diagrammalari.
+
+Sahifalar server bilan doimiy ulanib turadi: fayl yuklansa, tahrirlansa yoki o'chirilsa, ochiq oynalar o'zi yangilanadi.
+
+**Chiqish** deganda Q ustuni 0 ga tushgan, ya'ni 100% to'lab muddati o'tganlar ro'yxatidan chiqqan mijoz tushuniladi.
+
 ## Ishga tushirish
 
 Node.js 20 yoki undan yangi versiyasi kerak.

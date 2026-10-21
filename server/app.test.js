@@ -3,10 +3,15 @@ import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
 import { openDb } from './db.js';
 import { createApp } from './app.js';
+import { localParts } from './stats.js';
 
-let server, base;
+// Uploads are stamped with the current time, so test in the current month.
+const PERIOD = localParts(new Date().toISOString()).period;
+
+let server, base, db;
 before(async () => {
-  const app = createApp(openDb(':memory:'));
+  db = openDb(':memory:');
+  const app = createApp(db);
   server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}`;
@@ -76,7 +81,7 @@ test('baseline upload assigns clients by column X', async () => {
     { contract: 'HN2', client: 'MATBOBOYEV A', q: 2_000_000, r: 4_000_000, emp: "Zokirov  Muhammadqodir Ulug'bek o'g'li" },
     { contract: 'HN3', client: 'IBRAGIMOV D', q: 3_000_000, r: 9_000_000, emp: "Raximov Otabek Iqboljon o'g'li" },
   ]);
-  const r = await admin('POST', '/api/uploads', form(buf, { period: '2026-10' }));
+  const r = await admin('POST', '/api/uploads', form(buf, { period: PERIOD }));
   assert.equal(r.status, 200, JSON.stringify(r.body));
   assert.equal(r.body.upload.kind, 'baseline');
   assert.equal(r.body.matched, 2);
@@ -88,11 +93,11 @@ test('update upload: R drops are payments, Q = 0 or a missing contract means 100
     { contract: 'HN1', client: 'EGAMOV F', q: 0, r: 4_000_000, emp: "Zokirov Muhammadqodir Ulug'bek o'g'li" },
     { contract: 'HN3', client: 'IBRAGIMOV D', q: 3_000_000, r: 9_000_000, emp: "Raximov Otabek Iqboljon o'g'li" },
   ]);
-  const up = await admin('POST', '/api/uploads', form(buf, { period: '2026-10' }));
+  const up = await admin('POST', '/api/uploads', form(buf, { period: PERIOD }));
   assert.equal(up.body.upload.kind, 'update');
   updateId = up.body.upload.id;
 
-  const d = (await admin('GET', '/api/dashboard?period=2026-10')).body;
+  const d = (await admin('GET', `/api/dashboard?period=${PERIOD}`)).body;
   assert.deepEqual(d.cards, {
     startSum: 18_000_000, startCount: 3,
     currentSum: 9_000_000, currentCount: 1,
@@ -102,10 +107,34 @@ test('update upload: R drops are payments, Q = 0 or a missing contract means 100
   assert.equal(d.charts.months.at(-1).amount, 3_000_000);
   assert.equal(d.charts.hours.reduce((a, b) => a + b, 0), 3_000_000);
 
-  const mine = (await xodim('GET', '/api/dashboard?period=2026-10')).body.cards;
+  const mine = (await xodim('GET', `/api/dashboard?period=${PERIOD}`)).body.cards;
   assert.equal(mine.startCount, 2);
   assert.equal(mine.returnedCount, 2);
-  assert.equal((await xodim('GET', '/api/clients?period=2026-10')).body.clients.length, 2);
+  assert.equal((await xodim('GET', `/api/clients?period=${PERIOD}`)).body.clients.length, 2);
+});
+
+test('team report: latest status per client, exits and untouched clients per employee', async () => {
+  const zokirov = (await admin('GET', '/api/users')).body.users.find((u) => u.login === 'zokirov');
+  const now = new Date().toISOString();
+  const add = db.prepare('INSERT INTO contacts (user_id, contract, status, created_at) VALUES (?, ?, ?, ?)');
+  add.run(zokirov.id, 'HN2', 'boglanmadi', now);
+  add.run(zokirov.id, 'HN2', 'muhlat', now); // same client again: only the latest status counts
+
+  for (const scope of ['today', 'all']) {
+    const r = await admin('GET', `/api/team?scope=${scope}&period=${PERIOD}`);
+    assert.equal(r.status, 200);
+    const row = r.body.rows.find((x) => x.id === zokirov.id);
+    assert.equal(row.talked, 1);
+    assert.equal(row.statuses.muhlat, 1);
+    assert.equal(row.statuses.boglanmadi, 0);
+    assert.equal(row.exitCount, 2, 'HN1 reached Q = 0 and HN2 left the file');
+    assert.equal(row.exitQ, 1_000_000 + 2_000_000);
+    assert.equal(row.exitR, 5_000_000 + 4_000_000);
+    assert.equal(row.notTalked, 0);
+    assert.equal(r.body.total.talked, 1);
+    assert.equal(r.body.total.series.exits.reduce((a, b) => a + b, 0), 2);
+  }
+  assert.equal((await xodim('GET', '/api/team')).status, 403);
 });
 
 test('editing and deleting rows inside a file recalculates the portfolio', async () => {
@@ -115,24 +144,24 @@ test('editing and deleting rows inside a file recalculates the portfolio', async
 
   const e = await admin('PATCH', `/api/rows/${hn3.id}`, { col: 16, value: '0' });
   assert.equal(e.body.row.cells[16], 0);
-  let cards = (await admin('GET', '/api/dashboard?period=2026-10')).body.cards;
+  let cards = (await admin('GET', `/api/dashboard?period=${PERIOD}`)).body.cards;
   assert.equal(cards.returnedCount, 3);
   assert.equal(cards.currentCount, 0);
 
   await admin('PATCH', `/api/rows/${hn3.id}`, { col: 16, value: '3 000 000' });
   await admin('DELETE', `/api/rows/${hn3.id}`);
-  cards = (await admin('GET', '/api/dashboard?period=2026-10')).body.cards;
+  cards = (await admin('GET', `/api/dashboard?period=${PERIOD}`)).body.cards;
   assert.equal(cards.returnedCount, 3, 'a row deleted from the update counts as gone from the file');
 
   await admin('DELETE', `/api/uploads/${updateId}`);
-  cards = (await admin('GET', '/api/dashboard?period=2026-10')).body.cards;
+  cards = (await admin('GET', `/api/dashboard?period=${PERIOD}`)).body.cards;
   assert.equal(cards.returnedCount, 0);
   assert.equal(cards.currentCount, 3);
   assert.equal(cards.paidSum, 0);
 });
 
 test('a non-template file is rejected with a readable message', async () => {
-  const r = await admin('POST', '/api/uploads', form(Buffer.from('salom'), { period: '2026-10' }));
+  const r = await admin('POST', '/api/uploads', form(Buffer.from('salom'), { period: PERIOD }));
   assert.equal(r.status, 400);
   assert.match(r.body.error, /Excel/);
 });

@@ -41,7 +41,7 @@ export function Users({ me }: { me: User }) {
 
   return (
     <>
-      <PageHead title="Xodimlar" sub="Excel'dagi X ustunidagi ism bilan bir xil Familiya va Ism kiritilsa, mijozlar xodimga avtomatik biriktiriladi." />
+      <PageHead title="Foydalanuvchilar" sub="Excel'dagi X ustunidagi ism bilan bir xil Familiya va Ism kiritilsa, mijozlar xodimga avtomatik biriktiriladi." />
 
       <form className="panel user-form" onSubmit={add}>
         <div className="panel-head"><h3>Yangi foydalanuvchi</h3></div>

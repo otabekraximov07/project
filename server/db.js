@@ -41,6 +41,17 @@ CREATE TABLE IF NOT EXISTS rows (
 CREATE INDEX IF NOT EXISTS rows_upload ON rows(upload_id, row_no);
 CREATE INDEX IF NOT EXISTS rows_contract ON rows(contract);
 
+-- An employee's conversation with a client and its outcome. Filled from the employee panel.
+CREATE TABLE IF NOT EXISTS contacts (
+  id         INTEGER PRIMARY KEY,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  contract   TEXT NOT NULL,
+  status     TEXT NOT NULL CHECK (status IN ('muhlat', 'boglanmadi', 'uchinchi', 'telegram', 'sms', 'muammoli', 'tolandi')),
+  note       TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS contacts_time ON contacts(created_at);
+
 CREATE TABLE IF NOT EXISTS settings (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL

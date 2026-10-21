@@ -82,3 +82,30 @@ export async function api<T>(url: string, init: { method?: string; body?: unknow
   }
   return data as T;
 }
+
+export type Status = 'muhlat' | 'boglanmadi' | 'uchinchi' | 'telegram' | 'sms' | 'muammoli' | 'tolandi';
+
+export interface TeamSeries { payments: number[]; exits: number[] }
+
+export interface TeamRow {
+  id: number;
+  name: string;
+  talked: number;
+  statuses: Record<Status, number>;
+  notTalked: number;
+  assigned: number;
+  exitCount: number;
+  exitQ: number;
+  exitR: number;
+  paid: number;
+  series: TeamSeries;
+}
+
+export interface TeamReport {
+  scope: 'today' | 'all';
+  period: string;
+  date: string;
+  buckets: number;
+  total: { talked: number; statuses: Record<Status, number>; series: TeamSeries };
+  rows: TeamRow[];
+}

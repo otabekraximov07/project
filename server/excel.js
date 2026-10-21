@@ -19,6 +19,11 @@ export function nameKey(s) {
   return normalizeName(s).split(' ').slice(0, 2).join(' ');
 }
 
+/** Name keys an employee can appear under in column X ("Familiya Ism", either order). */
+export function userKeys(u) {
+  return new Set([nameKey(`${u.last_name} ${u.first_name}`), nameKey(`${u.first_name} ${u.last_name}`)]);
+}
+
 export function toNumber(v) {
   if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
   if (v == null || v === '') return 0;

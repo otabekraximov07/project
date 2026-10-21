@@ -10,7 +10,7 @@ const partsFmt = new Intl.DateTimeFormat('en-CA', {
 /** Local (Tashkent) calendar parts of an ISO timestamp. */
 export function localParts(iso) {
   const p = Object.fromEntries(partsFmt.formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
-  return { period: `${p.year}-${p.month}`, day: Number(p.day), hour: Number(p.hour) };
+  return { period: `${p.year}-${p.month}`, date: `${p.year}-${p.month}-${p.day}`, day: Number(p.day), hour: Number(p.hour) };
 }
 
 export function shiftPeriod(period, delta) {
@@ -19,7 +19,7 @@ export function shiftPeriod(period, delta) {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
-function daysInPeriod(period) {
+export function daysInPeriod(period) {
   const [y, m] = period.split('-').map(Number);
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
 }
@@ -31,6 +31,7 @@ function daysInPeriod(period) {
  *   With no baseline the first upload of the month plays that role.
  * - A payment is a drop in R (total unpaid) between two consecutive files.
  * - A contract that disappears from a later file is treated as having paid its overdue (Q) in full.
+ * - An exit is a contract whose Q fell to zero (100% paid): it leaves the overdue portfolio.
  */
 export function replayPeriod(db, period) {
   const all = db.prepare('SELECT id, kind, uploaded_at FROM uploads WHERE period = ? ORDER BY uploaded_at, id').all(period);
@@ -38,7 +39,9 @@ export function replayPeriod(db, period) {
   const uploads = all.slice(Math.max(baseIdx, 0));
   const state = new Map();
   const payments = [];
-  if (!uploads.length) return { uploads, state, payments };
+  const exits = new Map();
+  if (!uploads.length) return { uploads, state, payments, exits };
+  const exit = (s, at, empKey) => exits.set(s.contract, { at, contract: s.contract, empKey, q: s.q, baseR: s.baseR });
 
   const rowsStmt = db.prepare('SELECT id, contract, emp_key, q, r FROM rows WHERE upload_id = ? ORDER BY row_no');
   uploads.forEach((u, i) => {
@@ -60,19 +63,24 @@ export function replayPeriod(db, period) {
         continue;
       }
       if (s.r - row.r > EPS) payments.push({ at: u.uploaded_at, amount: s.r - row.r, contract, empKey: row.emp_key });
+      if (row.q > EPS) exits.delete(contract);
+      else if (s.q > EPS) exit(s, u.uploaded_at, row.emp_key);
       Object.assign(s, { rowId: row.id, empKey: row.emp_key, q: row.q, r: row.r, closed: false });
     }
 
     if (i === 0) return;
     for (const s of state.values()) {
       if (cur.has(s.contract) || s.closed) continue;
-      if (s.q > EPS) payments.push({ at: u.uploaded_at, amount: s.q, contract: s.contract, empKey: s.empKey });
+      if (s.q > EPS) {
+        payments.push({ at: u.uploaded_at, amount: s.q, contract: s.contract, empKey: s.empKey });
+        exit(s, u.uploaded_at, s.empKey);
+      }
       s.r = Math.max(0, s.r - s.q);
       s.q = 0;
       s.closed = true;
     }
   });
-  return { uploads, state, payments };
+  return { uploads, state, payments, exits: [...exits.values()] };
 }
 
 const owned = (keys) => (x) => !keys || keys.has(x.empKey);

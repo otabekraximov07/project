@@ -1,19 +1,14 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import {
-  BarElement, CategoryScale, Chart as ChartJS, Filler, LinearScale, LineElement, PointElement, Tooltip,
-  type ChartData, type ChartOptions,
-} from 'chart.js';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import type { ChartData, ChartOptions } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import { api, type Dashboard as DashboardData, type User } from '../api';
-import { compact, dateTime, money, percent, periodLabel } from '../format';
+import { gradient, moneyAxis, moneyTooltip, useLiveUpdates, xAxis } from '../chartKit';
+import { dateTime, money, percent, periodLabel } from '../format';
 import { PageHead } from './Shell';
 import { Empty, Icon, useToast, type IconName } from './ui';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip);
-ChartJS.defaults.font.family = 'Inter, system-ui, sans-serif';
-ChartJS.defaults.color = '#8B9AC4';
-
-export function Dashboard({ user, onUpload }: { user: User; onUpload?: () => void }) {
+/** The "Undiruv" view: portfolio cards and payment charts. */
+export function Dashboard({ user, title, onUpload }: { user: User; title: string; onUpload?: () => void }) {
   const toast = useToast();
   const [periods, setPeriods] = useState<string[] | null>(null);
   const [period, setPeriod] = useState('');
@@ -22,24 +17,30 @@ export function Dashboard({ user, onUpload }: { user: User; onUpload?: () => voi
   const [data, setData] = useState<DashboardData | null>(null);
   const isAdmin = user.role === 'admin';
 
-  useEffect(() => {
+  const loadPeriods = useCallback(() => {
     api<{ periods: string[] }>('/api/periods').then((r) => {
       setPeriods(r.periods);
-      setPeriod(r.periods[0] ?? '');
+      setPeriod((p) => (p && r.periods.includes(p) ? p : r.periods[0] ?? ''));
     }).catch((e) => toast(e.message, 'err'));
-    if (isAdmin) api<{ employees: User[] }>('/api/employees').then((r) => setEmployees(r.employees)).catch(() => {});
-  }, [isAdmin, toast]);
+  }, [toast]);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!period) return;
     const qs = new URLSearchParams({ period, ...(userId ? { userId } : {}) });
     api<DashboardData>(`/api/dashboard?${qs}`).then(setData).catch((e) => toast(e.message, 'err'));
   }, [period, userId, toast]);
 
+  useEffect(() => {
+    loadPeriods();
+    if (isAdmin) api<{ employees: User[] }>('/api/employees').then((r) => setEmployees(r.employees)).catch(() => {});
+  }, [isAdmin, loadPeriods]);
+  useEffect(load, [load]);
+  useLiveUpdates(() => { loadPeriods(); load(); });
+
   if (periods && !periods.length) {
     return (
       <>
-        <PageHead title="Asosiy oyna" />
+        <PageHead title={title} />
         <Empty icon="upload" title="Hali ma'lumot yo'q" text={isAdmin
           ? "Portfel ko'rinishi uchun Ma'lumot yuklash bo'limiga oy boshidagi Excel faylni yuklang."
           : "Rahbariyat portfel faylini yuklagach, sizga biriktirilgan mijozlar shu yerda ko'rinadi."}>
@@ -53,7 +54,7 @@ export function Dashboard({ user, onUpload }: { user: User; onUpload?: () => voi
   return (
     <>
       <PageHead
-        title="Asosiy oyna"
+        title={title}
         sub={data?.lastUploadAt ? `Oxirgi yangilanish: ${dateTime(data.lastUploadAt)} · ${data.uploads} ta fayl` : 'Yuklanmoqda…'}
       >
         {isAdmin && (
@@ -72,9 +73,9 @@ export function Dashboard({ user, onUpload }: { user: User; onUpload?: () => voi
         <StatCard i={1} icon="people" label="Mijozlar soni" value={c?.startCount} unit="ta" sub="Oy boshidagi" />
         <StatCard i={2} icon="pulse" label="Joriy portfel" value={c?.currentSum} unit="so'm"
           sub={c ? `${money(c.currentCount)} ta joriy mijoz` : ''} />
-        <StatCard i={3} icon="return" label="Qaytgan portfel" value={c?.returnedSum} unit="so'm" tone="gold"
+        <StatCard i={3} icon="return" label="Qaytgan portfel" value={c?.returnedSum} unit="so'm" accent="var(--gold)" gold
           sub={c ? `Portfelning ${percent(c.returnedSum, c.startSum)} qismi` : ''} />
-        <StatCard i={4} icon="checkCircle" label="100% to'lagan mijozlar" value={c?.returnedCount} unit="ta" tone="green"
+        <StatCard i={4} icon="checkCircle" label="100% to'lagan mijozlar" value={c?.returnedCount} unit="ta" accent="var(--green)"
           sub={c ? `Mijozlarning ${percent(c.returnedCount, c.startCount)} qismi` : ''} />
       </section>
 
@@ -85,14 +86,18 @@ export function Dashboard({ user, onUpload }: { user: User; onUpload?: () => voi
 
 function useCountUp(target: number | undefined, run: boolean) {
   const [v, setV] = useState(0);
+  const from = useRef(0);
   useEffect(() => {
     if (target === undefined || !run) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return setV(target);
     let raf = 0;
+    const start = from.current;
     const t0 = performance.now();
     const step = (t: number) => {
       const k = Math.min(1, (t - t0) / 1100);
-      setV(target * (1 - Math.pow(1 - k, 4)));
+      const val = start + (target - start) * (1 - Math.pow(1 - k, 4));
+      from.current = val;
+      setV(val);
       if (k < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
@@ -101,8 +106,10 @@ function useCountUp(target: number | undefined, run: boolean) {
   return v;
 }
 
-function StatCard({ i, icon, label, value, unit, sub, tone }: {
-  i: number; icon: IconName; label: string; value?: number; unit: string; sub: string; tone?: 'gold' | 'green';
+/** Animated KPI card: reveals on scroll, counts up, lifts and glows on hover or touch. */
+export function StatCard({ i, icon, label, value, unit, sub, accent, gold, primary }: {
+  i: number; icon: IconName; label: string; value?: number; unit: string; sub: string;
+  accent?: string; gold?: boolean; primary?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [seen, setSeen] = useState(false);
@@ -128,8 +135,8 @@ function StatCard({ i, icon, label, value, unit, sub, tone }: {
   return (
     <div
       ref={ref}
-      className={`stat ${tone ?? ''} ${seen ? 'in' : ''} ${touched ? 'touch' : ''}`}
-      style={{ '--i': i } as CSSProperties}
+      className={`stat ${gold ? 'gold' : ''} ${primary ? 'primary' : ''} ${seen ? 'in' : ''} ${touched ? 'touch' : ''}`}
+      style={{ '--i': i, ...(accent ? { '--accent': accent } : {}) } as CSSProperties}
       onPointerMove={onMove}
       onTouchStart={() => { setTouched(true); setTimeout(() => setTouched(false), 600); }}
     >
@@ -143,34 +150,18 @@ function StatCard({ i, icon, label, value, unit, sub, tone }: {
   );
 }
 
-const GRID = 'rgba(148,170,230,.08)';
-const moneyTooltip = { callbacks: { label: (ctx: { parsed: { y: number | null } }) => ` ${money(ctx.parsed.y ?? 0)} so'm` } };
-const axes = {
-  x: { grid: { display: false }, border: { display: false } },
-  y: { grid: { color: GRID }, border: { display: false }, beginAtZero: true, ticks: { callback: (v: string | number) => compact(Number(v)) } },
-};
-
-function gradient(top: string, bottom: string) {
-  return ({ chart }: { chart: ChartJS }) => {
-    if (!chart.chartArea) return top;
-    const g = chart.ctx.createLinearGradient(0, chart.chartArea.top, 0, chart.chartArea.bottom);
-    g.addColorStop(0, top);
-    g.addColorStop(1, bottom);
-    return g;
-  };
-}
-
 function Charts({ data }: { data: DashboardData }) {
   const { days, hours, months } = data.charts;
   const total = (a: number[]) => a.reduce((s, x) => s + x, 0);
-
-  const barOpts: ChartOptions<'bar'> = {
-    responsive: true, maintainAspectRatio: false, animation: { duration: 900, easing: 'easeOutQuart' },
-    plugins: { tooltip: moneyTooltip }, scales: axes,
-  };
+  const anim = { duration: 900, easing: 'easeOutQuart' } as const;
+  const barOpts = (values: number[]): ChartOptions<'bar'> => ({
+    responsive: true, maintainAspectRatio: false, animation: anim,
+    plugins: { tooltip: moneyTooltip }, scales: { x: xAxis, y: moneyAxis(values) },
+  });
+  const monthValues = months.map((m) => m.amount);
   const lineOpts: ChartOptions<'line'> = {
-    responsive: true, maintainAspectRatio: false, animation: { duration: 900, easing: 'easeOutQuart' },
-    plugins: { tooltip: moneyTooltip }, scales: axes, elements: { line: { tension: 0.35 } },
+    responsive: true, maintainAspectRatio: false, animation: anim,
+    plugins: { tooltip: moneyTooltip }, scales: { x: xAxis, y: moneyAxis(monthValues) }, elements: { line: { tension: 0.35 } },
   };
 
   const daily: ChartData<'bar'> = {
@@ -180,7 +171,7 @@ function Charts({ data }: { data: DashboardData }) {
   const monthly: ChartData<'line'> = {
     labels: months.map((m) => periodLabel(m.period, true)),
     datasets: [{
-      data: months.map((m) => m.amount), fill: true, borderColor: '#E2BE6E', borderWidth: 2,
+      data: monthValues, fill: true, borderColor: '#E2BE6E', borderWidth: 2,
       backgroundColor: gradient('rgba(226,190,110,.35)', 'rgba(226,190,110,0)'), pointBackgroundColor: '#E2BE6E', pointRadius: 3,
     }],
   };
@@ -193,7 +184,7 @@ function Charts({ data }: { data: DashboardData }) {
     <section className="charts">
       <div className="panel chart wide">
         <div className="panel-head"><h3>To'lovlar: kunlar bo'yicha</h3><span>{periodLabel(data.period)} · {money(total(days))} so'm</span></div>
-        <div className="chart-box"><Bar data={daily} options={barOpts} /></div>
+        <div className="chart-box"><Bar data={daily} options={barOpts(days)} /></div>
       </div>
       <div className="panel chart">
         <div className="panel-head"><h3>Oylar bo'yicha</h3><span>So'nggi 12 oy</span></div>
@@ -201,7 +192,7 @@ function Charts({ data }: { data: DashboardData }) {
       </div>
       <div className="panel chart">
         <div className="panel-head"><h3>Kun soatlari bo'yicha</h3><span>{money(total(hours))} so'm</span></div>
-        <div className="chart-box"><Bar data={hourly} options={barOpts} /></div>
+        <div className="chart-box"><Bar data={hourly} options={barOpts(hours)} /></div>
       </div>
     </section>
   );
