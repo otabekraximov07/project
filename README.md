@@ -29,6 +29,16 @@ Hisobot qoidalari:
 - **Gaplashilgan**: shu kuni (yoki oyda) kamida bitta izoh yozilgan mijoz. Bir kunda 10 ta izoh yozilsa ham, 1 marta sanaladi.
 - **Status**: har bir mijoz oxirgi belgilangan statusi bo'yicha sanaladi. Masalan, avval "Bog'lanib bo'lmadi", keyin "Muhlat" belgilansa, mijoz faqat "Muhlat"da sanaladi.
 - **Status bor, izoh yo'q** bo'lsa, status hisobotga tushadi, lekin mijoz "gaplashilmagan"lar qatorida qoladi.
+- **100% to'lagan mijoz** (Excel'da Q = 0) "gaplashilmagan"lardan chiqariladi. Agar u bilan gaplashilgan bo'lsa, "gaplashilgan"da qoladi va to'lovga (chiqishga) qo'shiladi.
+
+## Chat
+
+Ikkala panelda ham **Chat** bo'limi bor. Unda barcha xodimlar va rahbariyat uchun **Umumiy chat** hamda har bir xodim yoki rahbar bilan **shaxsiy suhbat** bor.
+
+- Matn, rasm, video, audio va istalgan fayl yuborish mumkin (bitta fayl 50 MB gacha). Faylni biriktirish tugmasi, sudrab tashlash yoki rasmni nusxalab qo'yish (Ctrl+V) orqali yuboriladi.
+- O'z xabaringizni tahrirlash va o'chirish mumkin. Tahrirlangan xabarda "tahrirlangan" belgisi chiqadi.
+- O'qilmagan xabarlar soni navigatorda ko'rinadi. Xabarlar real vaqtda keladi.
+- Fayllar `data/files/` papkasida saqlanadi (zaxira nusxa olganda `data` papkasini to'liq nusxalang). Shaxsiy suhbatdagi fayllarni faqat o'sha ikki kishi ochadi.
 
 ## Ishga tushirish
 
@@ -48,6 +58,7 @@ Ma'lumotlar `data/undiruv.db` (SQLite) faylida saqlanadi. Zaxira nusxa olish uch
 |---|---|---|
 | `PORT` | Server porti | `3000` |
 | `DB_FILE` | Ma'lumotlar bazasi fayli | `data/undiruv.db` |
+| `FILES_DIR` | Chat fayllari papkasi | `data/files` |
 | `JWT_SECRET` | Sessiya kaliti (berilmasa avtomatik yaratiladi) | — |
 | `COOKIE_SECURE` | HTTPS orqali ishlaganda `1` qiling | — |
 | `TZ_NAME` | Soat bo'yicha diagramma uchun vaqt zonasi | `Asia/Tashkent` |

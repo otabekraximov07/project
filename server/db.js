@@ -76,6 +76,34 @@ CREATE TABLE IF NOT EXISTS notes (
 CREATE INDEX IF NOT EXISTS notes_time ON notes(created_at);
 CREATE INDEX IF NOT EXISTS notes_contract ON notes(contract, id);
 
+-- Chat. channel is 'general' or 'dm:<lower user id>:<higher user id>'.
+CREATE TABLE IF NOT EXISTS files (
+  id         INTEGER PRIMARY KEY,
+  stored     TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  mime       TEXT NOT NULL,
+  size       INTEGER NOT NULL,
+  user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id         INTEGER PRIMARY KEY,
+  channel    TEXT NOT NULL,
+  user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  text       TEXT NOT NULL DEFAULT '',
+  file_id    INTEGER REFERENCES files(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  edited_at  TEXT,
+  deleted_at TEXT
+);
+CREATE INDEX IF NOT EXISTS messages_channel ON messages(channel, id);
+CREATE TABLE IF NOT EXISTS chat_reads (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  channel TEXT NOT NULL,
+  last_id INTEGER NOT NULL,
+  PRIMARY KEY (user_id, channel)
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL

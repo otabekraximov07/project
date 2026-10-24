@@ -10,6 +10,7 @@ import { getSetting, setSetting } from './db.js';
 import { COL, InputError, deriveFields, nameKey, parseWorkbook, toNumber, userKeys } from './excel.js';
 import { clientList, dashboard, localParts, replayPeriod } from './stats.js';
 import { STATUSES, teamReport } from './team.js';
+import { MAX_FILE_MB, mountChat } from './chat.js';
 
 const COOKIE = 'undiruv_session';
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -23,7 +24,7 @@ const fail = (status, message) => { throw new HttpError(status, message); };
 
 const publicUser = (u) => u && { id: u.id, first_name: u.first_name, last_name: u.last_name, login: u.login, role: u.role };
 
-export function createApp(db, { staticDir } = {}) {
+export function createApp(db, { staticDir, filesDir = path.join(process.cwd(), 'data', 'files') } = {}) {
   const secret = process.env.JWT_SECRET || getSetting(db, 'jwt_secret') || (() => {
     const s = crypto.randomBytes(48).toString('hex');
     setSetting(db, 'jwt_secret', s);
@@ -36,11 +37,16 @@ export function createApp(db, { staticDir } = {}) {
   app.use(cookieParser());
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
-  // Live updates: open pages listen on /api/events and refetch when anything changes.
-  const listeners = new Set();
-  const broadcast = () => { for (const res of listeners) res.write('data: change\n\n'); };
+  // Live updates: open pages listen on /api/events. Data changes go to everyone and make pages
+  // refetch; chat events go only to the people in that conversation.
+  const listeners = new Map(); // response -> user id
+  const broadcast = () => { for (const res of listeners.keys()) res.write('data: change\n\n'); };
+  const notifyChat = (event, userIds) => {
+    const line = `event: chat\ndata: ${JSON.stringify(event)}\n\n`;
+    for (const [res, uid] of listeners) if (!userIds || userIds.includes(uid)) res.write(line);
+  };
   app.use('/api', (req, res, next) => {
-    if (req.method !== 'GET' && !req.path.startsWith('/auth/')) {
+    if (req.method !== 'GET' && !req.path.startsWith('/auth/') && !req.path.startsWith('/chat/')) {
       res.on('finish', () => res.statusCode < 400 && broadcast());
     }
     next();
@@ -156,7 +162,7 @@ export function createApp(db, { staticDir } = {}) {
     res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
     res.write(': ok\n\n');
     const ping = setInterval(() => res.write(': ping\n\n'), 25_000);
-    listeners.add(res);
+    listeners.set(res, req.user.id);
     req.on('close', () => { clearInterval(ping); listeners.delete(res); });
   });
 
@@ -411,6 +417,8 @@ export function createApp(db, { staticDir } = {}) {
     res.json({ ok: true });
   });
 
+  mountChat(app, db, { auth, fail, filesDir, notify: notifyChat });
+
   app.use('/api', (_req, _res) => fail(404, 'Topilmadi.'));
 
   // ---------- web app ----------
@@ -420,7 +428,7 @@ export function createApp(db, { staticDir } = {}) {
   }
 
   app.use((err, _req, res, _next) => {
-    if (err instanceof multer.MulterError) return res.status(400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'Fayl hajmi 20 MB dan oshmasin.' : err.message });
+    if (err instanceof multer.MulterError) return res.status(400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? `Fayl hajmi juda katta (Excel 20 MB, chat ${MAX_FILE_MB} MB gacha).` : err.message });
     if (err instanceof HttpError) return res.status(err.status).json({ error: err.message });
     if (err instanceof InputError) return res.status(400).json({ error: err.message });
     if (err.type === 'entity.parse.failed') return res.status(400).json({ error: "So'rov noto'g'ri." });

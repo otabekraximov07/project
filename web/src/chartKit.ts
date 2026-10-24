@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import {
   BarElement, CategoryScale, Chart as ChartJS, Filler, Legend, LinearScale, LineElement, PointElement, Tooltip,
 } from 'chart.js';
@@ -43,19 +42,4 @@ export function gradient(top: string, bottom: string) {
   };
 }
 
-/** Calls `onChange` whenever the server reports a change (upload, edit, delete…). */
-export function useLiveUpdates(onChange: () => void) {
-  const cb = useRef(onChange);
-  cb.current = onChange;
-  useEffect(() => {
-    let timer = 0;
-    const fire = () => { clearTimeout(timer); timer = window.setTimeout(() => cb.current(), 250); };
-    const es = new EventSource('/api/events');
-    es.onmessage = fire;
-    // Safety net in case the stream drops (sleeping laptop, proxy timeouts).
-    const poll = window.setInterval(fire, 60_000);
-    const onFocus = () => document.visibilityState === 'visible' && fire();
-    document.addEventListener('visibilitychange', onFocus);
-    return () => { es.close(); clearInterval(poll); clearTimeout(timer); document.removeEventListener('visibilitychange', onFocus); };
-  }, []);
-}
+export { useLiveUpdates } from './live';

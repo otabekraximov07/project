@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { User } from '../api';
 import { Icon, type IconName } from './ui';
 
-export interface NavItem { id: string; label: string; icon: IconName }
+export interface NavItem { id: string; label: string; icon: IconName; badge?: number }
 
 /** Page layout: navigator on the left, content on the right. */
 export function Shell({ user, nav, active, onNavigate, onLogout, children }: {
@@ -21,6 +21,7 @@ export function Shell({ user, nav, active, onNavigate, onLogout, children }: {
             <button key={n.id} className={`nav-item ${active === n.id ? 'on' : ''}`} onClick={() => onNavigate(n.id)}>
               <Icon name={n.icon} />
               <span>{n.label}</span>
+              {!!n.badge && <span className="nav-badge">{n.badge > 99 ? '99+' : n.badge}</span>}
             </button>
           ))}
         </nav>

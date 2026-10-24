@@ -5,20 +5,24 @@ import { Dashboard } from './components/Dashboard';
 import { Home } from './components/Home';
 import { ClientCard } from './components/ClientCard';
 import { Clients } from './components/Clients';
+import { Chat } from './components/Chat';
 import { Shell, type NavItem } from './components/Shell';
 import { Splash } from './components/Splash';
 import { Uploads } from './components/Uploads';
 import { Users } from './components/Users';
 import { useToast } from './components/ui';
+import { setLiveEnabled, useChatEvents } from './live';
 
 const ADMIN_NAV: NavItem[] = [
   { id: 'home', label: 'Asosiy oyna', icon: 'home' },
   { id: 'upload', label: "Ma'lumot yuklash", icon: 'upload' },
   { id: 'users', label: 'Foydalanuvchilar', icon: 'users' },
+  { id: 'chat', label: 'Chat', icon: 'message' },
 ];
 const STAFF_NAV: NavItem[] = [
   { id: 'home', label: 'Asosiy oyna', icon: 'home' },
   { id: 'clients', label: 'Mijozlar', icon: 'list' },
+  { id: 'chat', label: 'Chat', icon: 'message' },
 ];
 
 const pageFromHash = () => location.hash.replace(/^#\/?/, '') || 'home';
@@ -42,16 +46,33 @@ export function App() {
   }, [toast]);
 
   const endSplash = useCallback(() => setSplash(false), []);
-  const navigate = (id: string) => { location.hash = `/${id}`; };
+  const navigate = useCallback((id: string) => { location.hash = `/${id}`; setPage(id); }, []);
+  const openChat = useCallback((cid: string | null) => navigate(cid ? `chat/${cid}` : 'chat'), [navigate]);
+
+  // Unread chat messages for the navigator badge and the tab title.
+  const [unread, setUnread] = useState(0);
+  const signedIn = !!auth?.user;
+  const loadUnread = useCallback(() => {
+    if (signedIn) api<{ unread: number }>('/api/chat/unread').then((r) => setUnread(r.unread)).catch(() => {});
+  }, [signedIn]);
+  useEffect(() => setLiveEnabled(signedIn), [signedIn]);
+  useEffect(() => {
+    loadUnread();
+    window.addEventListener('chat:read', loadUnread);
+    return () => window.removeEventListener('chat:read', loadUnread);
+  }, [loadUnread]);
+  useChatEvents(() => loadUnread());
+  useEffect(() => { document.title = unread ? `(${unread}) HamrohNasiya Undiruv` : 'HamrohNasiya Undiruv'; }, [unread]);
 
   if (splash) return <Splash onDone={endSplash} />;
   if (!auth) return <div className="boot" />;
   const { user } = auth;
   if (!user) return <Auth needsSetup={auth.needsSetup} onAuthed={(u) => { setAuth({ needsSetup: false, user: u }); navigate('home'); }} />;
 
-  const nav = user.role === 'admin' ? ADMIN_NAV : STAFF_NAV;
+  const nav = (user.role === 'admin' ? ADMIN_NAV : STAFF_NAV).map((n) => (n.id === 'chat' ? { ...n, badge: unread } : n));
+  const chatPage = page === 'chat' || page.startsWith('chat/');
   const clientPage = page.startsWith('client/') && nav.some((n) => n.id === 'clients');
-  const active = clientPage ? 'clients' : nav.some((n) => n.id === page) ? page : 'home';
+  const active = clientPage ? 'clients' : chatPage ? 'chat' : nav.some((n) => n.id === page) ? page : 'home';
 
   return (
     <Shell
@@ -61,7 +82,7 @@ export function App() {
       onNavigate={navigate}
       onLogout={async () => { await api('/api/auth/logout', { method: 'POST' }).catch(() => {}); setAuth({ needsSetup: false, user: null }); }}
     >
-      <div className="page" key={clientPage ? page : active}>
+      <div className={`page ${active === 'chat' ? 'page-chat' : ''}`} key={clientPage ? page : active}>
         {active === 'home' && (user.role === 'admin'
           ? <Home user={user} onUpload={() => navigate('upload')} />
           : <Dashboard user={user} title="Asosiy oyna" />)}
@@ -70,6 +91,7 @@ export function App() {
         {active === 'clients' && (clientPage
           ? <ClientCard contract={decodeURIComponent(page.slice('client/'.length))} onBack={() => navigate('clients')} />
           : <Clients onOpen={(c) => navigate(`client/${encodeURIComponent(c)}`)} />)}
+        {active === 'chat' && <Chat me={user} cid={page.startsWith('chat/') ? page.slice('chat/'.length) : null} onOpen={openChat} />}
       </div>
     </Shell>
   );

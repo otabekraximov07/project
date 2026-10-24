@@ -133,3 +133,24 @@ export interface TeamReport {
   total: { talked: number; statuses: Record<Status, number>; series: TeamSeries };
   rows: TeamRow[];
 }
+
+export interface ChatFile { id: number; name: string; mime: string; size: number }
+
+export interface ChatMessage {
+  id: number;
+  userId: number | null;
+  author: string;
+  text: string;
+  at: string;
+  editedAt: string | null;
+  file: ChatFile | null;
+}
+
+export interface Conversation {
+  channel: string;
+  title: string;
+  kind: 'general' | 'direct';
+  role?: Role;
+  last: ChatMessage | null;
+  unread: number;
+}

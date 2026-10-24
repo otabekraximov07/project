@@ -1,6 +1,9 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { openDb } from './db.js';
 import { createApp } from './app.js';
 import { localParts } from './stats.js';
@@ -10,7 +13,7 @@ const PERIOD = localParts(new Date().toISOString()).period;
 
 let server, base;
 before(async () => {
-  const app = createApp(openDb(':memory:'));
+  const app = createApp(openDb(':memory:'), { filesDir: fs.mkdtempSync(path.join(os.tmpdir(), 'undiruv-test-')) });
   server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}`;
@@ -20,7 +23,7 @@ after(() => { server.closeAllConnections(); server.close(); });
 /** Minimal client that keeps one session cookie, like a browser tab. */
 function client() {
   let cookie = '';
-  return async (method, url, body) => {
+  const call = async (method, url, body) => {
     const opts = { method, headers: { cookie } };
     if (body instanceof FormData) opts.body = body;
     else if (body) { opts.body = JSON.stringify(body); opts.headers['content-type'] = 'application/json'; }
@@ -29,6 +32,8 @@ function client() {
     if (set) cookie = set.split(';')[0];
     return { status: res.status, body: await res.json() };
   };
+  call.cookie = () => cookie;
+  return call;
 }
 
 /** Builds an .xlsx in the collection template: B contract, C client, Q, R, X employee. */
@@ -194,4 +199,59 @@ test('the last admin cannot be removed', async () => {
   const me = users.find((u) => u.login === 'rahbar');
   assert.equal((await admin('DELETE', `/api/users/${me.id}`)).status, 400);
   assert.equal(users.find((u) => u.login === 'zokirov').clients, 2);
+});
+
+test('chat: general room, private messages with files, unread counts, edit and delete', async () => {
+  const users = (await admin('GET', '/api/users')).body.users;
+  const rahbar = users.find((u) => u.login === 'rahbar');
+  await admin('POST', '/api/users', { first_name: 'Sardor', last_name: 'Karimov', login: 'sardor', password: 'parol123', role: 'xodim' });
+  const sardor = client();
+  await sardor('POST', '/api/auth/login', { login: 'sardor', password: 'parol123' });
+
+  const sent = await xodim('POST', '/api/chat/c/general/messages', { text: 'Assalomu alaykum' });
+  assert.equal(sent.status, 200);
+  let conv = (await admin('GET', '/api/chat/conversations')).body.conversations;
+  assert.equal(conv[0].channel, 'general');
+  assert.equal(conv[0].unread, 1);
+  assert.equal(conv[0].last.text, 'Assalomu alaykum');
+  await admin('POST', '/api/chat/c/general/read', { lastId: sent.body.message.id });
+  assert.equal((await admin('GET', '/api/chat/unread')).body.unread, 0);
+
+  // Private message with a picture: only the two people can see it.
+  const fd = new FormData();
+  fd.append('text', 'Chek rasmi');
+  fd.append('file', new Blob([Buffer.from('89504e47', 'hex')], { type: 'image/png' }), 'chek.png');
+  const dm = await xodim('POST', `/api/chat/c/u${rahbar.id}/messages`, fd);
+  assert.equal(dm.status, 200, JSON.stringify(dm.body));
+  const fileId = dm.body.message.file.id;
+  const zokirovId = dm.body.message.userId;
+  const inbox = (await admin('GET', `/api/chat/c/u${zokirovId}/messages`)).body.messages;
+  assert.equal(inbox.at(-1).file.name, 'chek.png');
+  assert.equal((await admin('GET', '/api/chat/unread')).body.unread, 1);
+
+  const asAdmin = await fetch(`${base}/api/files/${fileId}`, { headers: { cookie: (await admin.cookie()) } });
+  assert.equal(asAdmin.status, 200);
+  assert.equal(asAdmin.headers.get('content-type'), 'image/png');
+  const asOther = await fetch(`${base}/api/files/${fileId}`, { headers: { cookie: (await sardor.cookie()) } });
+  assert.equal(asOther.status, 403);
+  assert.equal((await sardor('GET', `/api/chat/c/u${zokirovId}/messages`)).body.messages.length, 0, "Sardor's own chat with Zokirov is empty");
+
+  // Files that could run script are always downloads.
+  const html = new FormData();
+  html.append('file', new Blob(['<script>alert(1)</script>'], { type: 'text/html' }), 'x.html');
+  const h = await xodim('POST', '/api/chat/c/general/messages', html);
+  const r = await fetch(`${base}/api/files/${h.body.message.file.id}`, { headers: { cookie: (await admin.cookie()) } });
+  assert.match(r.headers.get('content-disposition'), /^attachment/);
+  assert.equal(r.headers.get('content-type'), 'application/octet-stream');
+
+  // Only the author edits or deletes.
+  const id = sent.body.message.id;
+  assert.equal((await admin('PATCH', `/api/chat/messages/${id}`, { text: 'buzildi' })).status, 403);
+  const ed = await xodim('PATCH', `/api/chat/messages/${id}`, { text: 'Assalomu alaykum, hammaga!' });
+  assert.equal(ed.body.message.text, 'Assalomu alaykum, hammaga!');
+  assert.ok(ed.body.message.editedAt);
+  await xodim('DELETE', `/api/chat/messages/${dm.body.message.id}`);
+  assert.equal((await admin('GET', `/api/chat/c/u${zokirovId}/messages`)).body.messages.length, 0);
+  assert.equal((await fetch(`${base}/api/files/${fileId}`, { headers: { cookie: (await admin.cookie()) } })).status, 404);
+  assert.equal((await xodim('POST', '/api/chat/c/general/messages', { text: '   ' })).status, 400);
 });
