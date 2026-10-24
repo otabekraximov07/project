@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 /** channel '*' means "something may have changed, refresh" (sent after reconnecting). */
-export interface ChatEvent { channel: string; kind: 'new' | 'edit' | 'delete'; id: number }
+export interface ChatEvent { channel: string; kind: 'new' | 'edit' | 'delete' | 'read'; id: number }
 
 type Kind = 'change' | 'chat';
 const subs: Record<Kind, Set<(e?: ChatEvent) => void>> = { change: new Set(), chat: new Set() };

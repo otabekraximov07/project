@@ -38,6 +38,7 @@ Ikkala panelda ham **Chat** bo'limi bor. Unda barcha xodimlar va rahbariyat uchu
 - Matn, rasm, video, audio va istalgan fayl yuborish mumkin (bitta fayl 50 MB gacha). Faylni biriktirish tugmasi, sudrab tashlash yoki rasmni nusxalab qo'yish (Ctrl+V) orqali yuboriladi.
 - O'z xabaringizni tahrirlash va o'chirish mumkin. Tahrirlangan xabarda "tahrirlangan" belgisi chiqadi.
 - O'qilmagan xabarlar soni navigatorda ko'rinadi. Xabarlar real vaqtda keladi.
+- O'qilganlik belgisi: **✓** yuborildi, **✓✓** o'qildi (hamma o'qisa oltin rangda). Umumiy chatda ✓✓ yonida o'qiganlar soni turadi. Belgini bossangiz, kim qachon o'qigani va kim hali o'qimagani chiqadi.
 - Fayllar `data/files/` papkasida saqlanadi (zaxira nusxa olganda `data` papkasini to'liq nusxalang). Shaxsiy suhbatdagi fayllarni faqat o'sha ikki kishi ochadi.
 
 ## Ishga tushirish

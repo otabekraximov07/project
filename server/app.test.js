@@ -217,6 +217,20 @@ test('chat: general room, private messages with files, unread counts, edit and d
   await admin('POST', '/api/chat/c/general/read', { lastId: sent.body.message.id });
   assert.equal((await admin('GET', '/api/chat/unread')).body.unread, 0);
 
+  // Read receipts: the author sees who has read it and who has not yet.
+  let mine = (await xodim('GET', '/api/chat/c/general/messages')).body;
+  assert.equal(mine.messages.at(-1).readCount, 1);
+  assert.equal(mine.audience, users.length);
+  let reads = (await xodim('GET', `/api/chat/messages/${sent.body.message.id}/reads`)).body;
+  assert.deepEqual(reads.read.map((r) => r.name), ['Aliyev Rustam']);
+  assert.ok(reads.read[0].at);
+  assert.ok(reads.unread.some((u) => u.name === 'Karimov Sardor'));
+  assert.ok(!reads.unread.some((u) => u.name.startsWith('Zokirov')), 'the author is not in the list');
+  await sardor('POST', '/api/chat/c/general/read', { lastId: sent.body.message.id });
+  await sardor('POST', '/api/chat/c/general/read', { lastId: sent.body.message.id }); // reading twice counts once
+  mine = (await xodim('GET', '/api/chat/c/general/messages')).body;
+  assert.equal(mine.messages.at(-1).readCount, 2);
+
   // Private message with a picture: only the two people can see it.
   const fd = new FormData();
   fd.append('text', 'Chek rasmi');
@@ -232,6 +246,10 @@ test('chat: general room, private messages with files, unread counts, edit and d
   const asAdmin = await fetch(`${base}/api/files/${fileId}`, { headers: { cookie: (await admin.cookie()) } });
   assert.equal(asAdmin.status, 200);
   assert.equal(asAdmin.headers.get('content-type'), 'image/png');
+  assert.equal((await sardor('GET', `/api/chat/messages/${dm.body.message.id}/reads`)).status, 404, 'not a member of that chat');
+  assert.equal((await xodim('GET', `/api/chat/c/u${rahbar.id}/messages`)).body.messages.at(-1).readCount, 0);
+  await admin('POST', `/api/chat/c/u${zokirovId}/read`, { lastId: dm.body.message.id });
+  assert.equal((await xodim('GET', `/api/chat/c/u${rahbar.id}/messages`)).body.messages.at(-1).readCount, 1, 'private message: read');
   const asOther = await fetch(`${base}/api/files/${fileId}`, { headers: { cookie: (await sardor.cookie()) } });
   assert.equal(asOther.status, 403);
   assert.equal((await sardor('GET', `/api/chat/c/u${zokirovId}/messages`)).body.messages.length, 0, "Sardor's own chat with Zokirov is empty");

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent } from 'react';
 import { api, ApiError, type ChatMessage, type Conversation, type User } from '../api';
 import { useChatEvents, type ChatEvent } from '../live';
-import { Confirm, Icon, useToast } from './ui';
+import { Confirm, Icon, Modal, useToast } from './ui';
 
 const MAX_MB = 50;
 const time = (iso: string) => new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -127,6 +127,8 @@ function Conversation({ me, conv, toCid, onBack, onActivity }: {
   const cid = conv.channel;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hasMore, setHasMore] = useState(false);
+  const [audience, setAudience] = useState(1);
+  const [readsOf, setReadsOf] = useState<ChatMessage | null>(null);
   const [text, setText] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [editing, setEditing] = useState<ChatMessage | null>(null);
@@ -148,8 +150,9 @@ function Conversation({ me, conv, toCid, onBack, onActivity }: {
   });
 
   const loadLatest = useCallback(async () => {
-    const r = await api<{ messages: ChatMessage[]; hasMore: boolean }>(`/api/chat/c/${cid}/messages`);
+    const r = await api<{ messages: ChatMessage[]; hasMore: boolean; audience: number }>(`/api/chat/c/${cid}/messages`);
     merge(r.messages);
+    setAudience(r.audience);
     return r;
   }, [cid]);
 
@@ -287,7 +290,10 @@ function Conversation({ me, conv, toCid, onBack, onActivity }: {
                   {!mine && conv.kind === 'general' && <div className="msg-author">{m.author}</div>}
                   {m.file && <Attachment m={m} onOpen={() => setPreview(m)} />}
                   {m.text && <div className="msg-text">{m.text}</div>}
-                  <div className="msg-meta">{m.editedAt && 'tahrirlangan · '}{time(m.at)}</div>
+                  <div className="msg-meta">
+                    {m.editedAt && 'tahrirlangan · '}{time(m.at)}
+                    {mine && <Ticks m={m} audience={audience} general={conv.kind === 'general'} onClick={() => setReadsOf(m)} />}
+                  </div>
                 </div>
                 {mine && (
                   <div className="msg-actions">
@@ -356,6 +362,7 @@ function Conversation({ me, conv, toCid, onBack, onActivity }: {
             onActivity();
           }} />
       )}
+      {readsOf && <Reads m={readsOf} general={conv.kind === 'general'} onClose={() => setReadsOf(null)} />}
       {preview?.file && (
         <div className="lightbox" onClick={() => setPreview(null)} role="dialog" aria-label={preview.file.name}>
           <img src={`/api/files/${preview.file.id}`} alt={preview.file.name} />
@@ -379,5 +386,53 @@ function Attachment({ m, onOpen }: { m: ChatMessage; onOpen: () => void }) {
       <span className="att-ico"><Icon name="download" size={18} /></span>
       <span><b>{f.name}</b><small>{sizeLabel(f.size)}</small></span>
     </a>
+  );
+}
+
+/** ✓ sent, ✓✓ read; in the general room also how many have read it. */
+function Ticks({ m, audience, general, onClick }: { m: ChatMessage; audience: number; general: boolean; onClick: () => void }) {
+  const read = m.readCount > 0;
+  const all = read && m.readCount >= audience;
+  const label = read ? (general ? `${m.readCount} kishi o'qidi` : "O'qildi") : "Yuborildi, hali o'qilmagan";
+  return (
+    <button className={`ticks ${read ? 'read' : ''} ${all ? 'all' : ''}`} onClick={onClick} title={label} aria-label={label}>
+      <Icon name={read ? 'checks' : 'check'} size={15} />
+      {general && read && <span>{m.readCount}</span>}
+    </button>
+  );
+}
+
+function Reads({ m, general, onClose }: { m: ChatMessage; general: boolean; onClose: () => void }) {
+  const toast = useToast();
+  const [data, setData] = useState<{ read: { userId: number; name: string; at: string }[]; unread: { userId: number; name: string }[] } | null>(null);
+  const load = useCallback(() => {
+    api<NonNullable<typeof data>>(`/api/chat/messages/${m.id}/reads`).then(setData).catch((e) => { toast(e.message, 'err'); onClose(); });
+  }, [m.id, toast, onClose]);
+  useEffect(load, [load]);
+  useChatEvents((e) => e.kind === 'read' && load());
+  const when = (iso: string) => `${dayLabel(iso)}, ${time(iso)}`;
+  return (
+    <Modal title={general ? "Kim o'qidi" : "O'qilganlik"} onClose={onClose}>
+      {m.text && <p className="reads-quote">{m.text.length > 140 ? `${m.text.slice(0, 140)}…` : m.text}</p>}
+      {!data ? <p className="muted">Yuklanmoqda…</p> : (
+        <div className="reads">
+          <h4><Icon name="checks" size={15} />O'qiganlar · {data.read.length}</h4>
+          <ul>
+            {data.read.map((r) => (
+              <li key={r.userId}><span className="chat-ava sm">{initials(r.name)}</span><b>{r.name}</b><small>{when(r.at)}</small></li>
+            ))}
+            {!data.read.length && <li className="muted">Hali hech kim o'qimagan.</li>}
+          </ul>
+          {data.unread.length > 0 && (
+            <>
+              <h4 className="dim"><Icon name="check" size={15} />O'qimaganlar · {data.unread.length}</h4>
+              <ul className="dim">
+                {data.unread.map((u) => <li key={u.userId}><span className="chat-ava sm">{initials(u.name)}</span><b>{u.name}</b></li>)}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+    </Modal>
   );
 }

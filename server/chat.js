@@ -45,11 +45,13 @@ export function mountChat(app, db, { auth, fail, filesDir, notify }) {
   };
 
   const msgSelect = `SELECT m.id, m.user_id AS userId, ${userName} AS author, m.text, m.created_at AS at, m.edited_at AS editedAt,
-      f.id AS fileId, f.name AS fileName, f.mime AS fileMime, f.size AS fileSize
+      f.id AS fileId, f.name AS fileName, f.mime AS fileMime, f.size AS fileSize,
+      (SELECT COUNT(*) FROM message_reads mr WHERE mr.message_id = m.id) AS readCount
     FROM messages m LEFT JOIN users u ON u.id = m.user_id LEFT JOIN files f ON f.id = m.file_id`;
   const shape = (r) => ({
     id: r.id, userId: r.userId, author: r.author || "O'chirilgan foydalanuvchi", text: r.text, at: r.at, editedAt: r.editedAt,
     file: r.fileId ? { id: r.fileId, name: r.fileName, mime: r.fileMime, size: r.fileSize } : null,
+    readCount: r.readCount,
   });
 
   const announce = (channel, members, event) => notify({ ...event, channel }, members);
@@ -88,14 +90,25 @@ export function mountChat(app, db, { auth, fail, filesDir, notify }) {
     const before = Number(req.query.before) || Number.MAX_SAFE_INTEGER;
     const rows = db.prepare(`${msgSelect} WHERE m.channel = ? AND m.deleted_at IS NULL AND m.id < ? ORDER BY m.id DESC LIMIT ?`)
       .all(channel, before, PAGE + 1);
-    res.json({ messages: rows.slice(0, PAGE).reverse().map(shape), hasMore: rows.length > PAGE });
+    // How many people besides the author can read a message here: everyone else, or the one peer.
+    const audience = channel === 'general' ? db.prepare('SELECT COUNT(*) n FROM users').get().n - 1 : 1;
+    res.json({ messages: rows.slice(0, PAGE).reverse().map(shape), hasMore: rows.length > PAGE, audience });
   });
 
   app.post('/api/chat/c/:cid/read', auth, (req, res) => {
-    const { channel } = resolve(req, req.params.cid);
+    const { channel, members } = resolve(req, req.params.cid);
     const last = Number(req.body?.lastId) || 0;
-    db.prepare(`INSERT INTO chat_reads (user_id, channel, last_id) VALUES (?, ?, ?)
-      ON CONFLICT(user_id, channel) DO UPDATE SET last_id = MAX(last_id, excluded.last_id)`).run(req.user.id, channel, last);
+    const me = req.user.id;
+    const marked = db.transaction(() => {
+      const from = lastRead(me, channel);
+      db.prepare(`INSERT INTO chat_reads (user_id, channel, last_id) VALUES (?, ?, ?)
+        ON CONFLICT(user_id, channel) DO UPDATE SET last_id = MAX(last_id, excluded.last_id)`).run(me, channel, last);
+      return db.prepare(`INSERT OR IGNORE INTO message_reads (message_id, user_id, read_at)
+        SELECT id, ?, ? FROM messages WHERE channel = ? AND id > ? AND id <= ? AND deleted_at IS NULL AND (user_id IS NULL OR user_id != ?)`)
+        .run(me, new Date().toISOString(), channel, from, last, me).changes;
+    })();
+    // Authors see their ticks turn into "read".
+    if (marked) announce(channel, members, { kind: 'read', id: last });
     res.json({ ok: true });
   });
 
@@ -135,6 +148,19 @@ export function mountChat(app, db, { auth, fail, filesDir, notify }) {
     return m;
   };
   const membersOf = (channel) => (channel === 'general' ? null : channel.split(':').slice(1).map(Number));
+
+  app.get('/api/chat/messages/:id/reads', auth, (req, res) => {
+    const m = db.prepare('SELECT id, channel, user_id FROM messages WHERE id = ? AND deleted_at IS NULL').get(Number(req.params.id));
+    const members = m && membersOf(m.channel);
+    if (!m || (members && !members.includes(req.user.id))) fail(404, 'Xabar topilmadi.');
+    const read = db.prepare(`SELECT u.id AS userId, ${userName} AS name, mr.read_at AS at FROM message_reads mr
+      JOIN users u ON u.id = mr.user_id WHERE mr.message_id = ? ORDER BY mr.read_at`).all(m.id);
+    const seen = new Set(read.map((r) => r.userId));
+    const audience = members
+      ? db.prepare(`SELECT u.id AS userId, ${userName} AS name FROM users u WHERE u.id IN (${members.map(() => '?').join(',')})`).all(...members)
+      : db.prepare(`SELECT u.id AS userId, ${userName} AS name FROM users u ORDER BY u.last_name, u.first_name`).all();
+    res.json({ read, unread: audience.filter((u) => u.userId !== m.user_id && !seen.has(u.userId)) });
+  });
 
   app.patch('/api/chat/messages/:id', auth, (req, res) => {
     const m = ownMessage(req);

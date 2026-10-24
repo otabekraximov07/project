@@ -144,6 +144,8 @@ export interface ChatMessage {
   at: string;
   editedAt: string | null;
   file: ChatFile | null;
+  /** How many people (other than the author) have read it. */
+  readCount: number;
 }
 
 export interface Conversation {

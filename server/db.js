@@ -97,6 +97,13 @@ CREATE TABLE IF NOT EXISTS messages (
   deleted_at TEXT
 );
 CREATE INDEX IF NOT EXISTS messages_channel ON messages(channel, id);
+-- Who read which message and when (the author's own messages are not recorded).
+CREATE TABLE IF NOT EXISTS message_reads (
+  message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  read_at    TEXT NOT NULL,
+  PRIMARY KEY (message_id, user_id)
+);
 CREATE TABLE IF NOT EXISTS chat_reads (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   channel TEXT NOT NULL,
