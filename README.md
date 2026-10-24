@@ -41,6 +41,21 @@ Ikkala panelda ham **Chat** bo'limi bor. Unda barcha xodimlar va rahbariyat uchu
 - O'qilganlik belgisi: **✓** yuborildi, **✓✓** o'qildi (hamma o'qisa oltin rangda). Umumiy chatda ✓✓ yonida o'qiganlar soni turadi. Belgini bossangiz, kim qachon o'qigani va kim hali o'qimagani chiqadi.
 - Fayllar `data/files/` papkasida saqlanadi (zaxira nusxa olganda `data` papkasini to'liq nusxalang). Shaxsiy suhbatdagi fayllarni faqat o'sha ikki kishi ochadi.
 
+## Kompyuterga o'rnatish va yangilash (GitHub orqali)
+
+Bir martalik o'rnatish:
+
+1. [Git](https://git-scm.com/download/win) va [Node.js LTS](https://nodejs.org) o'rnating.
+2. Terminalda (VS Code → Terminal → New Terminal) yozing:
+   ```
+   git clone -b claude/focused-cori-t8mrl1 https://github.com/otabekraximov07/project.git hamrohnasiya
+   ```
+   GitHub login so'rasa, o'z hisobingiz bilan kiring.
+3. Oldingi versiyadan `data` papkasi bo'lsa, uni yangi `hamrohnasiya` papkasiga ko'chiring.
+4. `hamrohnasiya` papkasidagi **ishga-tushirish.bat** faylini ikki marta bosing.
+
+Yangilanish chiqqanda serverni to'xtating (Ctrl+C) va **yangilash.bat** ni ikki marta bosing. Skript yangi kodni oladi, yig'adi va serverni qayta ishga tushiradi. `data` papkasidagi foydalanuvchilar, Excel fayllar, izohlar va chat xabarlari o'zgarmaydi. Mac yoki Linux'da `./yangilash.sh` ishlatiladi.
+
 ## Ishga tushirish
 
 Node.js 20 yoki undan yangi versiyasi kerak.
